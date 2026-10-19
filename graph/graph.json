@@ -1,0 +1,32 @@
+{
+  "nodes": [
+    {"id": "web", "label": "apps/web", "kind": "ui", "may_fetch_target": false},
+    {"id": "extension", "label": "apps/extension", "kind": "ui", "may_fetch_target": false},
+    {"id": "android", "label": "apps/android", "kind": "ui", "may_fetch_target": false},
+    {"id": "api", "label": "services/core HTTP API", "kind": "boundary", "may_fetch_target": false},
+    {"id": "guard", "label": "internal/guard", "kind": "control", "may_fetch_target": false},
+    {"id": "assess", "label": "internal/assess", "kind": "orchestrator", "may_fetch_target": false},
+    {"id": "tls", "label": "collect.Certificate", "kind": "collector", "may_fetch_target": true, "ports": ["443"]},
+    {"id": "dns", "label": "collect.Lookup", "kind": "collector", "may_fetch_target": false},
+    {"id": "page", "label": "collect.Page", "kind": "collector", "may_fetch_target": true, "ports": ["80", "443"]},
+    {"id": "score", "label": "internal/score", "kind": "policy", "may_fetch_target": false},
+    {"id": "rdap-client", "label": "Java RDAP", "kind": "collector", "may_fetch_target": false},
+    {"id": "iana", "label": "IANA bootstrap + registry", "kind": "external", "may_fetch_target": false},
+    {"id": "site", "label": "Assessed public host", "kind": "external", "may_fetch_target": true}
+  ],
+  "edges": [
+    {"from": "web", "to": "api", "via": "origin JSON", "why": "Path never included"},
+    {"from": "extension", "to": "api", "via": "origin JSON", "why": "Active tab origin only"},
+    {"from": "android", "to": "api", "via": "origin JSON", "why": "Same contract on a phone"},
+    {"from": "api", "to": "assess", "via": "in-process", "why": "Body capped at 8kB"},
+    {"from": "assess", "to": "guard", "via": "Normalize + ResolvePublic", "why": "Refuse non-public before dial"},
+    {"from": "assess", "to": "tls", "via": "pinned IP", "why": "Only after public check"},
+    {"from": "assess", "to": "dns", "via": "resolver", "why": "No HTTP to the site"},
+    {"from": "assess", "to": "page", "via": "GET origin/", "why": "Each redirect re-checked"},
+    {"from": "assess", "to": "rdap-client", "via": "domain query", "why": "Never a URL"},
+    {"from": "tls", "to": "site", "via": "TLS 443", "why": "Public unicast only"},
+    {"from": "page", "to": "site", "via": "HTTP(S)", "why": "Ports 80 and 443 only"},
+    {"from": "rdap-client", "to": "iana", "via": "HTTPS", "why": "Public registry hosts only"},
+    {"from": "assess", "to": "score", "via": "facts", "why": "Policy does not open sockets"}
+  ]
+}

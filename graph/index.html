@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WebSentinel knowledge graph</title>
+    <style>
+      :root { color: #1d1914; background: #e7e1d6; font: 16px/1.5 Sora, sans-serif; }
+      body { margin: 24px auto; max-width: 880px; }
+      h1 { font-family: Fraunces, Georgia, serif; font-weight: 560; letter-spacing: -0.03em; }
+      svg { width: 100%; height: auto; background: #f7f3ec; border: 1px solid #d5cdc0; border-radius: 16px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+      th, td { text-align: left; padding: 8px; border-bottom: 1px solid #d5cdc0; vertical-align: top; }
+      .yes { color: #8e2430; }
+    </style>
+  </head>
+  <body>
+    <h1>Who may open a socket</h1>
+    <p>Deterministic graph of this repository. No vector store. Every edge is a reason.</p>
+    <svg viewBox="0 0 860 420" role="img" aria-label="Module graph">
+      <rect x="20" y="24" width="160" height="52" rx="8" fill="#f7f3ec" stroke="#1d1914"/>
+      <text x="36" y="54" font-size="14">Website</text>
+      <rect x="20" y="92" width="160" height="52" rx="8" fill="#f7f3ec" stroke="#1d1914"/>
+      <text x="36" y="122" font-size="14">Extension</text>
+      <rect x="20" y="160" width="160" height="52" rx="8" fill="#f7f3ec" stroke="#1d1914"/>
+      <text x="36" y="190" font-size="14">Android</text>
+      <rect x="250" y="92" width="180" height="52" rx="8" fill="#1d1914"/>
+      <text x="266" y="122" font-size="14" fill="#f7f3ec">Go checker</text>
+      <rect x="500" y="24" width="160" height="52" rx="8" fill="#f7f3ec" stroke="#1d1914"/>
+      <text x="516" y="54" font-size="14">Public website</text>
+      <rect x="500" y="160" width="160" height="52" rx="8" fill="#f7f3ec" stroke="#1d1914"/>
+      <text x="516" y="190" font-size="14">RDAP</text>
+      <rect x="250" y="240" width="180" height="52" rx="8" fill="#f7f3ec" stroke="#1d1914"/>
+      <text x="266" y="270" font-size="14">Java registry</text>
+      <line x1="180" y1="50" x2="250" y2="110" stroke="#1d1914"/>
+      <line x1="180" y1="118" x2="250" y2="118" stroke="#1d1914"/>
+      <line x1="180" y1="186" x2="250" y2="130" stroke="#1d1914"/>
+      <line x1="430" y1="118" x2="500" y2="50" stroke="#1d1914"/>
+      <line x1="340" y1="144" x2="340" y2="240" stroke="#1d1914"/>
+      <line x1="430" y1="266" x2="500" y2="186" stroke="#1d1914"/>
+    </svg>
+    <table>
+      <thead><tr><th>From</th><th>To</th><th>Why</th><th>Touches the target?</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <script>
+      fetch("graph.json")
+        .then((r) => r.json())
+        .then((g) => {
+          const nodes = Object.fromEntries(g.nodes.map((n) => [n.id, n]))
+          document.getElementById("rows").innerHTML = g.edges
+            .map((e) => {
+              const dest = nodes[e.to]
+              const danger = dest && dest.may_fetch_target
+              return `<tr><td>${nodes[e.from].label}</td><td>${dest.label}</td><td>${e.why}</td><td class="${danger ? "yes" : ""}">${danger ? "yes, after the guard" : "no"}</td></tr>`
+            })
+            .join("")
+        })
+    </script>
+  </body>
+</html>

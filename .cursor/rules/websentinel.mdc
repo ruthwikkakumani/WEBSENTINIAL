@@ -1,0 +1,6 @@
+---
+description: WebSentinel safety and product rules
+alwaysApply: true
+---
+
+WebSentinel is an advisory website-risk checker. Never add exploit, credential, or attack capability. Never contact loopback, RFC1918, link-local, or cloud-metadata addresses. Never send path, query, fragment, or passwords off the device. Never invent detection metrics. Keep documented rule scores separate from extra observations. Copy must tell a person what to do next, not that a site is proven safe.

@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.x"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Go tests
+        run: cd services/core && go test ./...
+      - name: Rule fixtures
+        run: cd services/core && go run ./cmd/eval -fixtures ../../data/eval-fixtures.json
+      - name: Java RDAP parser
+        run: |
+          cd services/rdap
+          javac --release 21 -d build src/sentinel/*.java
+          java -cp build sentinel.ParseTest
+      - name: Website typecheck and unit tests
+        run: |
+          cd apps/web
+          npm ci
+          npx tsc --noEmit
+          npx vitest run
+      - name: Website build
+        run: cd apps/web && npm run build

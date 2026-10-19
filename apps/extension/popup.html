@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>WebSentinel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <span class="mark" aria-hidden="true"></span>
+      <strong>WebSentinel</strong>
+    </header>
+    <p id="host" class="host">Reading this tab…</p>
+    <form id="manual" class="manual" hidden>
+      <label for="manual-url">Link</label>
+      <input id="manual-url" autocomplete="off" spellcheck="false" placeholder="https://" />
+    </form>
+    <button id="go" type="button">Check this tab</button>
+    <p id="status" class="status" role="status"></p>
+    <section id="result" hidden></section>
+    <p class="fine">Only the host is sent. A low score is not proof of safety.</p>
+    <script src="popup.js"></script>
+  </body>
+</html>
