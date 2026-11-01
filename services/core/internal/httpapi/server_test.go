@@ -40,3 +40,78 @@ func TestRefusalsDoNotEchoSecrets(t *testing.T) {
 		}
 	}
 }
+
+func TestRDAPHealthRequiresRegistryIdentity(t *testing.T) {
+	cases := []struct {
+		name   string
+		status int
+		body   string
+		want   bool
+	}{
+		{"ready", 200, `{"service":"rdap","status":"ok"}`, true},
+		{"wrong service", 200, `{"service":"other","status":"ok"}`, false},
+		{"down", 200, `{"service":"rdap","status":"down"}`, false},
+		{"empty", 200, ``, false},
+		{"malformed", 200, `{`, false},
+		{"oversized", 200, strings.Repeat(" ", 2049) + `{"service":"rdap","status":"ok"}`, false},
+		{"unavailable", 503, `{"service":"rdap","status":"ok"}`, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != "/health" || r.Method != http.MethodGet {
+					t.Errorf("unexpected registry request: %s %s", r.Method, r.URL.Path)
+				}
+				w.WriteHeader(tc.status)
+				io.WriteString(w, tc.body)
+			}))
+			defer ts.Close()
+			srv := New(assess.Service{}, nil, ts.URL)
+			if got := srv.rdapUp(); got != tc.want {
+				t.Fatalf("rdapUp() = %v, want %v", got, tc.want)
+			}
+			response := httptest.NewRecorder()
+			srv.Handler().ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/api/v1/health", nil))
+			state := "down"
+			if tc.want {
+				state = "ok"
+			}
+			if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"rdap":"`+state+`"`) {
+				t.Fatalf("health API misrepresented registry state: %d %s", response.Code, response.Body.String())
+			}
+		})
+	}
+}
+
+func TestRDAPHealthNeverFollowsRedirects(t *testing.T) {
+	contacted := false
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		contacted = true
+		io.WriteString(w, `{"service":"rdap","status":"ok"}`)
+	}))
+	defer target.Close()
+	registry := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, target.URL, http.StatusFound)
+	}))
+	defer registry.Close()
+	if New(assess.Service{}, nil, registry.URL).rdapUp() || contacted {
+		t.Fatal("health accepted or followed a redirect")
+	}
+}
+
+func TestRDAPHealthRejectsNonOriginConfiguration(t *testing.T) {
+	contacted := false
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		contacted = true
+		io.WriteString(w, `{"service":"rdap","status":"ok"}`)
+	}))
+	defer ts.Close()
+	for _, base := range []string{ts.URL + "/nested", ts.URL + "?token=secret", ts.URL + "#fragment", "http://user:secret@" + strings.TrimPrefix(ts.URL, "http://"), "http://169.254.169.254"} {
+		if New(assess.Service{}, nil, base).rdapUp() {
+			t.Error("health accepted non-origin registry configuration")
+		}
+	}
+	if contacted {
+		t.Fatal("health contacted registry with invalid base")
+	}
+}

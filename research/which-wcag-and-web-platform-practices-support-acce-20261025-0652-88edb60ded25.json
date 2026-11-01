@@ -1,0 +1,463 @@
+{
+  "schema": "phronen_research_pack_v1",
+  "question": "Which WCAG and web-platform practices support accessible tabs, visible focus, reduced-motion transitions and responsive web performance?",
+  "asked_at": "2026-10-25T06:52:11.394376+00:00",
+  "depth": "quick",
+  "freshness_days": 0,
+  "queries": [
+    "Which WCAG and web-platform practices support accessible tabs, visible focus, reduced-motion transitions and responsive web performance?",
+    "W3C WCAG 2.2 WAI ARIA Authoring Practices tabs keyboard navigation visible focus prefers-reduced-motion official guidance",
+    "Keyboard tab interface semantics and focus management",
+    "Reduced-motion handling and responsive touch interaction",
+    "site:w3.org (\"WCAG 2.2\" OR \"ARIA Authoring Practices\") (\"tabs\" OR \"Focus Visible\" OR \"Focus Appearance\" OR \"Focus Not Obscured\" OR \"Animation from Interactions\")",
+    "(site:developer.mozilla.org OR site:web.dev OR site:w3.org) (\"prefers-reduced-motion\" OR \"responsive images\" OR \"responsive design\" OR \"Core Web Vitals\")",
+    "Custom components widgets do provide way convey semantic information user agent.",
+    "WAI-ARIA specifies increase accessibility dynamic content user interface components developed Ajax, HTML, JavaScript related",
+    "(site:w3.org/WAI/ARIA/apg/patterns/tabs/ OR site:w3.org/WAI/WCAG22/Understanding/) tabs keyboard activation focus-visible focus-not-obscured animation-from-interactions",
+    "(site:developer.mozilla.org OR site:web.dev OR site:w3.org) prefers-reduced-motion responsive images viewport resource loading Core Web Vitals performance"
+  ],
+  "investigation": {
+    "rounds": [
+      {
+        "round": 1,
+        "queries": [
+          "Which WCAG and web-platform practices support accessible tabs, visible focus, reduced-motion transitions and responsive web performance?",
+          "W3C WCAG 2.2 WAI ARIA Authoring Practices tabs keyboard navigation visible focus prefers-reduced-motion official guidance"
+        ],
+        "pages_attempted": 0,
+        "sources_loaded": 0,
+        "facts_kept": 0,
+        "criteria": {
+          "criteria": [
+            {
+              "criterion": "Keyboard tab interface semantics and focus management",
+              "covered": false,
+              "similarity": 0.0,
+              "by": ""
+            },
+            {
+              "criterion": "Reduced-motion handling and responsive touch interaction",
+              "covered": false,
+              "similarity": 0.0,
+              "by": ""
+            },
+            {
+              "criterion": "Animation properties and measurement versus performance claims",
+              "covered": false,
+              "similarity": 0.0,
+              "by": ""
+            }
+          ],
+          "met": false,
+          "uncovered": [
+            "Keyboard tab interface semantics and focus management",
+            "Reduced-motion handling and responsive touch interaction",
+            "Animation properties and measurement versus performance claims"
+          ]
+        },
+        "corroborate": [],
+        "follow_up": {
+          "status": "MODEL_PROPOSAL",
+          "gaps": [
+            "No evidence identifies applicable WCAG success criteria or distinguishes normative requirements from recommended web-platform practices.",
+            "Accessible tabs are unsupported: tablist/tab/tabpanel semantics, accessible names, selected state, relationships, keyboard navigation, activation behavior and focus management need primary-source coverage.",
+            "Visible focus is unsupported: keyboard operability, focus visibility, focus appearance and protection from focus obscuration need applicable WCAG guidance and implementation evidence.",
+            "Reduced-motion transitions are unsupported: user preference detection with prefers-reduced-motion, appropriate transition alternatives and relevant WCAG animation requirements need primary-source coverage.",
+            "Responsive web performance is unsupported: responsive layout and media delivery, loading and rendering practices, and performance measurement need primary-source coverage; their relationship to accessibility also remains unexplained."
+          ],
+          "queries": [
+            "site:w3.org (\"WCAG 2.2\" OR \"ARIA Authoring Practices\") (\"tabs\" OR \"Focus Visible\" OR \"Focus Appearance\" OR \"Focus Not Obscured\" OR \"Animation from Interactions\")",
+            "(site:developer.mozilla.org OR site:web.dev OR site:w3.org) (\"prefers-reduced-motion\" OR \"responsive images\" OR \"responsive design\" OR \"Core Web Vitals\")"
+          ]
+        }
+      },
+      {
+        "round": 2,
+        "queries": [
+          "Keyboard tab interface semantics and focus management",
+          "Reduced-motion handling and responsive touch interaction",
+          "site:w3.org (\"WCAG 2.2\" OR \"ARIA Authoring Practices\") (\"tabs\" OR \"Focus Visible\" OR \"Focus Appearance\" OR \"Focus Not Obscured\" OR \"Animation from Interactions\")",
+          "(site:developer.mozilla.org OR site:web.dev OR site:w3.org) (\"prefers-reduced-motion\" OR \"responsive images\" OR \"responsive design\" OR \"Core Web Vitals\")"
+        ],
+        "pages_attempted": 2,
+        "sources_loaded": 2,
+        "facts_kept": 3,
+        "criteria": {
+          "criteria": [
+            {
+              "criterion": "Keyboard tab interface semantics and focus management",
+              "covered": false,
+              "best_claim": "G2",
+              "similarity": 0.292,
+              "by": ""
+            },
+            {
+              "criterion": "Reduced-motion handling and responsive touch interaction",
+              "covered": false,
+              "best_claim": "G1",
+              "similarity": 0.222,
+              "by": ""
+            },
+            {
+              "criterion": "Animation properties and measurement versus performance claims",
+              "covered": false,
+              "best_claim": "G2",
+              "similarity": 0.191,
+              "by": ""
+            }
+          ],
+          "met": false,
+          "uncovered": [
+            "Keyboard tab interface semantics and focus management",
+            "Reduced-motion handling and responsive touch interaction",
+            "Animation properties and measurement versus performance claims"
+          ]
+        },
+        "corroborate": [
+          "Custom components widgets do provide way convey semantic information user agent.",
+          "WAI-ARIA specifies increase accessibility dynamic content user interface components developed Ajax, HTML, JavaScript related"
+        ],
+        "follow_up": {
+          "status": "MODEL_PROPOSAL",
+          "gaps": [
+            "Accessible tabs lack primary-source guidance on tablist/tab/tabpanel semantics, accessible names and relationships, selection state, keyboard navigation, focus management, and automatic versus manual activation.",
+            "Visible focus lacks current WCAG references and primary-source guidance on keyboard operability, focus visibility and obstruction, focus styling, and applicable conformance levels.",
+            "Reduced-motion transitions are unanswered: no primary-source coverage of prefers-reduced-motion, motion alternatives, or applicable WCAG requirements for animation and moving content.",
+            "Responsive web performance is unanswered: no relevant evidence on responsive layouts and images, resource loading, rendering performance, or performance measurement, nor the distinction between WCAG requirements and performance recommendations.",
+            "All supplied accessibility claims rely on Wikipedia rather than primary specifications or guidance. The broad custom-widget and focus/tab-index claims lack scope and do not establish implementation practices.",
+            "Currency is unestablished: S1 is undated, and S2's 2010 timestamp does not establish current coverage. The supplied CORS source contributes no evidence addressing the requested practices."
+          ],
+          "queries": [
+            "(site:w3.org/WAI/ARIA/apg/patterns/tabs/ OR site:w3.org/WAI/WCAG22/Understanding/) tabs keyboard activation focus-visible focus-not-obscured animation-from-interactions",
+            "(site:developer.mozilla.org OR site:web.dev OR site:w3.org) prefers-reduced-motion responsive images viewport resource loading Core Web Vitals performance"
+          ]
+        }
+      },
+      {
+        "round": 3,
+        "queries": [
+          "Custom components widgets do provide way convey semantic information user agent.",
+          "WAI-ARIA specifies increase accessibility dynamic content user interface components developed Ajax, HTML, JavaScript related",
+          "(site:w3.org/WAI/ARIA/apg/patterns/tabs/ OR site:w3.org/WAI/WCAG22/Understanding/) tabs keyboard activation focus-visible focus-not-obscured animation-from-interactions",
+          "(site:developer.mozilla.org OR site:web.dev OR site:w3.org) prefers-reduced-motion responsive images viewport resource loading Core Web Vitals performance"
+        ],
+        "pages_attempted": 0,
+        "sources_loaded": 0,
+        "facts_kept": 0,
+        "criteria": {
+          "criteria": [
+            {
+              "criterion": "Keyboard tab interface semantics and focus management",
+              "covered": false,
+              "best_claim": "G2",
+              "similarity": 0.292,
+              "by": ""
+            },
+            {
+              "criterion": "Reduced-motion handling and responsive touch interaction",
+              "covered": false,
+              "best_claim": "G1",
+              "similarity": 0.222,
+              "by": ""
+            },
+            {
+              "criterion": "Animation properties and measurement versus performance claims",
+              "covered": false,
+              "best_claim": "G2",
+              "similarity": 0.191,
+              "by": ""
+            }
+          ],
+          "met": false,
+          "uncovered": [
+            "Keyboard tab interface semantics and focus management",
+            "Reduced-motion handling and responsive touch interaction",
+            "Animation properties and measurement versus performance claims"
+          ]
+        },
+        "follow_up": {
+          "status": "MODEL_PROPOSAL",
+          "gaps": [
+            "Accessible tabs remain unspecified: tablist/tab/tabpanel semantics, accessible names and relationships, selected state, keyboard navigation, focus management, and automatic versus manual activation need primary-source guidance.",
+            "Visible focus remains unanswered: relevant WCAG criteria, conformance levels, focus visibility and obstruction requirements, and web-platform styling practices are not established.",
+            "Reduced-motion transitions remain unanswered: relevant WCAG requirements and techniques, prefers-reduced-motion support, and alternatives to nonessential animation need primary-source evidence.",
+            "Responsive web performance remains unanswered: responsive layout and reflow accessibility requirements, loading and rendering practices, and performance measurement guidance are absent.",
+            "The supplied claims are supported only by a secondary source. The blanket statement about custom widgets and the vague assertion that focus and tab-index problems are corrected lack context and do not establish implementation requirements.",
+            "Currency is not established: no WCAG or ARIA guidance version is identified, S1 has no publication date, and the dated CORS source supplies no relevant evidence for the requested practices."
+          ],
+          "queries": [
+            "(site:w3.org/WAI/ARIA/apg/patterns/tabs/ OR site:w3.org/WAI/WCAG22/Understanding/) tabs keyboard activation focus-visible focus-not-obscured focus-appearance animation-from-interactions reflow",
+            "(site:web.dev OR site:developer.mozilla.org OR site:drafts.csswg.org) prefers-reduced-motion transitions responsive design responsive images loading rendering Core Web Vitals"
+          ]
+        }
+      }
+    ],
+    "max_rounds": 3,
+    "page_limit": 5,
+    "stop_reason": "round_limit",
+    "coverage_status": "MODEL_PROPOSAL",
+    "unresolved_gaps": [
+      "Not yet covered: Keyboard tab interface semantics and focus management",
+      "Not yet covered: Reduced-motion handling and responsive touch interaction",
+      "Not yet covered: Animation properties and measurement versus performance claims",
+      "Accessible tabs remain unspecified: tablist/tab/tabpanel semantics, accessible names and relationships, selected state, keyboard navigation, focus management, and automatic versus manual activation need primary-source guidance.",
+      "Visible focus remains unanswered: relevant WCAG criteria, conformance levels, focus visibility and obstruction requirements, and web-platform styling practices are not established.",
+      "Reduced-motion transitions remain unanswered: relevant WCAG requirements and techniques, prefers-reduced-motion support, and alternatives to nonessential animation need primary-source evidence.",
+      "Responsive web performance remains unanswered: responsive layout and reflow accessibility requirements, loading and rendering practices, and performance measurement guidance are absent.",
+      "The supplied claims are supported only by a secondary source. The blanket statement about custom widgets and the vague assertion that focus and tab-index problems are corrected lack context and do not establish implementation requirements.",
+      "Currency is not established: no WCAG or ARIA guidance version is identified, S1 has no publication date, and the dated CORS source supplies no relevant evidence for the requested practices."
+    ],
+    "coverage_verified": false,
+    "criteria": {
+      "criteria": [
+        {
+          "criterion": "Keyboard tab interface semantics and focus management",
+          "covered": false,
+          "best_claim": "C3",
+          "similarity": 0.292,
+          "by": ""
+        },
+        {
+          "criterion": "Reduced-motion handling and responsive touch interaction",
+          "covered": false,
+          "best_claim": "C2",
+          "similarity": 0.222,
+          "by": ""
+        },
+        {
+          "criterion": "Animation properties and measurement versus performance claims",
+          "covered": false,
+          "best_claim": "C3",
+          "similarity": 0.191,
+          "by": ""
+        }
+      ],
+      "met": false,
+      "uncovered": [
+        "Keyboard tab interface semantics and focus management",
+        "Reduced-motion handling and responsive touch interaction",
+        "Animation properties and measurement versus performance claims"
+      ]
+    },
+    "engine": "fused",
+    "tokens_used": 6892,
+    "token_budget": 40000
+  },
+  "sources": [
+    {
+      "id": "S1",
+      "url": "https://en.wikipedia.org/wiki/Web_accessibility",
+      "title": "Web accessibility - Wikipedia",
+      "site": "wikipedia.org",
+      "kind": "web",
+      "published": "",
+      "retrieved_at": "2026-10-25T06:52:52Z",
+      "chars": 56880,
+      "sha256": "3707603e58b18be2c1bbe4a8a020e1a6582b25a5380756455a7bde4534bfc6fa",
+      "read": "facts",
+      "credibility": 0.3629
+    },
+    {
+      "id": "S2",
+      "url": "https://en.wikipedia.org/wiki/Cross-origin_resource_sharing",
+      "title": "Cross-origin resource sharing - Wikipedia",
+      "site": "wikipedia.org",
+      "kind": "web",
+      "published": "2010-06-14T19:00:50Z",
+      "retrieved_at": "2026-10-25T06:52:53Z",
+      "chars": 12403,
+      "sha256": "5fad8065fdd4ecbf43ae099fce131508664b28303dda0f8581c4cadfafd558bb",
+      "read": "nothing relevant",
+      "credibility": 0.2936
+    }
+  ],
+  "claims": [
+    {
+      "id": "C1",
+      "text": "Custom components or widgets do not provide a way to convey semantic information to the user agent.",
+      "label": "EXTERNAL",
+      "sources": [
+        "S1"
+      ],
+      "quotes": [
+        {
+          "source": "S1",
+          "quote": "These custom components or widgets do not provide a way to convey semantic information to the user agent.",
+          "source_sha256": "3707603e58b18be2c1bbe4a8a020e1a6582b25a5380756455a7bde4534bfc6fa"
+        }
+      ],
+      "dated": "",
+      "freshness": {
+        "newest": "",
+        "age_days": null,
+        "basis": "",
+        "undated_sources": 1,
+        "required_days": null,
+        "meets_requirement": null,
+        "retrieved": "2026-10-25T06:52:52"
+      },
+      "confidence": 0.308
+    },
+    {
+      "id": "C2",
+      "text": "WAI-ARIA specifies how to increase the accessibility of dynamic content and user interface components developed with Ajax, HTML, JavaScript and related technologies.",
+      "label": "EXTERNAL",
+      "sources": [
+        "S1"
+      ],
+      "quotes": [
+        {
+          "source": "S1",
+          "quote": "specifies how to increase the accessibility of dynamic content and user interface components developed with Ajax, HTML, JavaScript and related technologies.",
+          "source_sha256": "3707603e58b18be2c1bbe4a8a020e1a6582b25a5380756455a7bde4534bfc6fa"
+        }
+      ],
+      "dated": "",
+      "freshness": {
+        "newest": "",
+        "age_days": null,
+        "basis": "",
+        "undated_sources": 1,
+        "required_days": null,
+        "meets_requirement": null,
+        "retrieved": "2026-10-25T06:52:52"
+      },
+      "confidence": 0.308
+    },
+    {
+      "id": "C3",
+      "text": "Accessibility problems with the focus and tab index are corrected.",
+      "label": "EXTERNAL",
+      "sources": [
+        "S1"
+      ],
+      "quotes": [
+        {
+          "source": "S1",
+          "quote": "Accessibility problems with the focus and tab index are also corrected.",
+          "source_sha256": "3707603e58b18be2c1bbe4a8a020e1a6582b25a5380756455a7bde4534bfc6fa"
+        }
+      ],
+      "dated": "",
+      "freshness": {
+        "newest": "",
+        "age_days": null,
+        "basis": "",
+        "undated_sources": 1,
+        "required_days": null,
+        "meets_requirement": null,
+        "retrieved": "2026-10-25T06:52:52"
+      },
+      "confidence": 0.308
+    }
+  ],
+  "conflicts": [],
+  "report": {
+    "status": "ALL_POINTS_SUPPORTED",
+    "points": [
+      {
+        "text": "WAI-ARIA specifies how to increase the accessibility of dynamic content and user interface components developed with Ajax, HTML, JavaScript and related technologies.",
+        "claims": [
+          "C2"
+        ],
+        "sources": [
+          "S1"
+        ],
+        "quotes": [
+          {
+            "source": "S1",
+            "quote": "specifies how to increase the accessibility of dynamic content and user interface components developed with Ajax, HTML, JavaScript and related technologies."
+          }
+        ],
+        "quote_found": true,
+        "entailment": "supported",
+        "review_note": "The quote supports every factual clause, and the context identifies WAI-ARIA as its subject.",
+        "credibility": {
+          "S1": 0.3629
+        }
+      },
+      {
+        "text": "Accessibility problems with the focus and tab index are corrected.",
+        "claims": [
+          "C3"
+        ],
+        "sources": [
+          "S1"
+        ],
+        "quotes": [
+          {
+            "source": "S1",
+            "quote": "Accessibility problems with the focus and tab index are also corrected."
+          }
+        ],
+        "quote_found": true,
+        "entailment": "supported",
+        "review_note": "The quote explicitly states that accessibility problems with the focus and tab index are corrected.",
+        "credibility": {
+          "S1": 0.3629
+        }
+      },
+      {
+        "text": "Custom components or widgets do not provide a way to convey semantic information to the user agent.",
+        "claims": [
+          "C1"
+        ],
+        "sources": [
+          "S1"
+        ],
+        "quotes": [
+          {
+            "source": "S1",
+            "quote": "These custom components or widgets do not provide a way to convey semantic information to the user agent."
+          }
+        ],
+        "quote_found": true,
+        "entailment": "supported",
+        "review_note": "The quote directly states the claim with the same subject and negation.",
+        "credibility": {
+          "S1": 0.3629
+        }
+      }
+    ],
+    "dropped": [],
+    "unknown": [
+      "Which specific WCAG and web-platform practices support accessible tabs.",
+      "Which specific WCAG and web-platform practices support visible focus.",
+      "Which WCAG and web-platform practices support reduced-motion transitions.",
+      "Which WCAG and web-platform practices support responsive web performance."
+    ],
+    "reviewer": "same model as the reader (not independent)",
+    "checks": "each quote re-found in the page text read; each point reviewed for entailment against only its quotes"
+  },
+  "refused": [],
+  "stats": {
+    "pages_found": 2,
+    "sources_loaded": 2,
+    "sources_read": 2,
+    "facts_kept": 3,
+    "facts_refused_quote_not_in_page": 0,
+    "verified": 0,
+    "corroborated": 0,
+    "independence_verified": false,
+    "semantic_verification": "NOT_RUN",
+    "external": 3,
+    "user_provided": 0,
+    "stale": 0,
+    "seconds": 345.4,
+    "sources_unread": 0,
+    "answer_points": 3,
+    "answer_points_dropped": 0
+  },
+  "labels": {
+    "CORROBORATED": "two or more sites state it; quotes were located, but source independence and semantic support are not independently verified",
+    "EXTERNAL": "one site states it (exact quote found)",
+    "USER-PROVIDED": "the user's own files state it",
+    "STALE": "every source is older than the freshness this question needs",
+    "INFERRED": "reasoning from the facts above — the answer must say it is an inference",
+    "GENERATED": "made by PHRONEN (a draft, an example, a design) — not a fact about the world",
+    "UNKNOWN": "no source was found — the answer must say it is not known"
+  },
+  "pack_path": "/Users/ruthwikkakumani/Desktop/WEBSENTINIAL CAPSTONE/research/which-wcag-and-web-platform-practices-support-acce-20261025-0652-88edb60ded25.json",
+  "brief_path": "/Users/ruthwikkakumani/Desktop/WEBSENTINIAL CAPSTONE/research/which-wcag-and-web-platform-practices-support-acce-20261025-0652-88edb60ded25.md",
+  "evidence_path": "/Users/ruthwikkakumani/Desktop/WEBSENTINIAL CAPSTONE/research/which-wcag-and-web-platform-practices-support-acce-20261025-0652-88edb60ded25.evidence.jsonl"
+}

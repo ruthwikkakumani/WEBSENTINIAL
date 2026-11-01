@@ -1,0 +1,217 @@
+name: CI/CD — Build, test, docker, deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  GO_VERSION: "1.25.x"
+  NODE_VERSION: "22"
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: latest
+          working-directory: services/core
+
+      - name: Lint Java
+        run: |
+          cd services/rdap
+          javac --release 21 -d /tmp/check src/sentinel/*.java
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go
+            services/core/go.sum
+          key: ${{ runner.os }}-go-${{ hashFiles('services/core/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Go tests
+        run: cd services/core && go test ./...
+
+      - name: Rule fixtures
+        run: cd services/core && go run ./cmd/eval -fixtures ../../data/eval-fixtures.json
+
+      - name: Java RDAP tests
+        run: |
+          cd services/rdap
+          javac --release 21 -d build src/sentinel/*.java
+          java -cp build sentinel.ParseTest
+
+      - name: Web typecheck and unit tests
+        run: |
+          cd apps/web
+          npm ci
+          npx tsc --noEmit
+          npx vitest run
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Go binary
+        run: |
+          cd services/core
+          go build -ldflags="-s -w" -o /tmp/sentinel ./cmd/sentinel
+
+      - name: Build Java
+        run: |
+          cd services/rdap
+          javac --release 21 -d build src/sentinel/*.java
+          jar cf /tmp/rdap-service.jar -C build .
+
+      - name: Build web
+        run: |
+          cd apps/web
+          npm ci
+          npm run build
+
+  docker:
+    name: Docker build & push
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=,suffix=,format=short
+            type=ref,event=branch
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push core image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push RDAP image
+        uses: docker/build-push-action@v6
+        with:
+          context: services/rdap
+          file: services/rdap/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/rdap:${{ github.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: [docker]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Set Kubernetes context
+        uses: azure/k8s-set-context@v4
+        with:
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/configmap.yaml
+          kubectl apply -f k8s/pdb.yaml
+          kubectl apply -f k8s/service-core.yaml
+          kubectl apply -f k8s/service-rdap.yaml
+          kubectl apply -f k8s/ingress.yaml
+          kubectl apply -f k8s/hpa.yaml
+
+          # Patch deployments with exact image digest for traceability
+          kubectl set image deployment/websentinel-core \
+            -n websentinel \
+            websentinel-core=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            --record
+
+          kubectl set image deployment/websentinel-rdap \
+            -n websentinel \
+            websentinel-rdap=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/rdap:${{ github.sha }} \
+            --record
+
+          kubectl apply -f k8s/deployment-core.yaml
+          kubectl apply -f k8s/deployment-rdap.yaml
+
+      - name: Verify rollout
+        run: |
+          kubectl rollout status deployment/websentinel-core -n websentinel --timeout=180s
+          kubectl rollout status deployment/websentinel-rdap -n websentinel --timeout=180s
+          echo "Deployment complete."

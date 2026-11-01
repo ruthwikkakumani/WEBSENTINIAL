@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: websentinel
+  labels:
+    name: websentinel
+    environment: production
+    app.kubernetes.io/name: websentinel
+    app.kubernetes.io/part-of: websentinel

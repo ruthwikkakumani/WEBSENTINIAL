@@ -64,7 +64,11 @@ public final class ParseTest {
         if (Client.publicAddress(InetAddress.getByName("169.254.169.254"))) fail("metadata");
         if (Client.publicAddress(InetAddress.getByName("192.168.0.1"))) fail("lan");
 
-        System.out.println("rdap parser checks passed");
+        for (String name : new String[]{"https://example.invalid/private?token=secret", "user:secret@example.invalid", "example.invalid/private", "example.invalid?token=secret", "example.invalid#secret"}) {
+            if (Client.validDomain(name)) fail("URL material accepted as a domain");
+        }
+        MainTest.run();
+        System.out.println("rdap parser and request privacy checks passed");
     }
 
     private static void fail(String message) {

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: websentinel-rdap
+  namespace: websentinel
+  labels:
+    app: websentinel-rdap
+    app.kubernetes.io/name: websentinel-rdap
+    app.kubernetes.io/component: rdap
+    app.kubernetes.io/part-of: websentinel
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8082
+      targetPort: http
+      protocol: TCP
+  selector:
+    app: websentinel-rdap

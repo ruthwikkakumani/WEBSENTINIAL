@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: websentinel-core
+  namespace: websentinel
+  labels:
+    app: websentinel-core
+    app.kubernetes.io/name: websentinel-core
+    app.kubernetes.io/component: core
+    app.kubernetes.io/part-of: websentinel
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: websentinel-core
+  template:
+    metadata:
+      labels:
+        app: websentinel-core
+        app.kubernetes.io/name: websentinel-core
+        app.kubernetes.io/component: core
+        app.kubernetes.io/part-of: websentinel
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+      serviceAccountName: websentinel-core
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: core
+          image: ghcr.io/websentinel/core:latest
+          imagePullPolicy: Always
+          args:
+            - "-addr=0.0.0.0:8080"
+            - "-data=/data/history.json"
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: websentinel-config
+          env:
+            - name: REDIS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: websentinel-config
+                  key: REDIS_ADDR
+            - name: RDAP_BASE
+              valueFrom:
+                configMapKeyRef:
+                  name: websentinel-config
+                  key: RDAP_BASE
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+          startupProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            failureThreshold: 12
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}

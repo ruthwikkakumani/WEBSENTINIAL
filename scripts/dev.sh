@@ -5,14 +5,12 @@ ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 cd "$ROOT"
 mkdir -p data services/rdap/build
 
-if lsof -nP -iTCP:8080 -sTCP:LISTEN >/dev/null 2>&1; then
-  echo "Port 8080 is already in use."
-  exit 1
-fi
-if lsof -nP -iTCP:8082 -sTCP:LISTEN >/dev/null 2>&1; then
-  echo "Port 8082 is already in use."
-  exit 1
-fi
+for port in 5173 8080 8082; do
+  if lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "Port $port is already in use; no services were started."
+    exit 1
+  fi
+done
 
 javac --release 21 -d services/rdap/build services/rdap/src/sentinel/*.java
 java -cp services/rdap/build sentinel.Main 8082 &

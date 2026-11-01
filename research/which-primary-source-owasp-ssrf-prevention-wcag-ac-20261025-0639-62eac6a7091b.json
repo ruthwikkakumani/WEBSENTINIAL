@@ -1,0 +1,289 @@
+{
+  "schema": "phronen_research_pack_v1",
+  "question": "Which primary-source OWASP SSRF prevention, WCAG accessibility and web.dev performance recommendations apply to a responsive origin-only website risk advisory checker?",
+  "asked_at": "2026-10-25T06:39:57.367659+00:00",
+  "depth": "quick",
+  "freshness_days": 0,
+  "queries": [
+    "OWASP SSRF Prevention Cheat Sheet W3C WCAG 2.2 web.dev Core Web Vitals recommendations responsive accessible website URL risk checker origin validation",
+    "2026 latest OWASP SSRF DNS rebinding redirect prevention W3C WCAG updates web.dev performance guidance limitations disagreements URL safety checker",
+    "SSRF prevention covering IP validation and redirects",
+    "Keyboard accessibility and contrast guidance",
+    "site:cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html SSRF domain validation DNS private IP redirects allowlist protocol",
+    "(site:w3.org/WAI/WCAG22/Understanding/ reflow keyboard focus labels errors status messages target size) OR (site:web.dev/articles/ Core Web Vitals responsive images JavaScript layout stability)",
+    "site:cheatsheetseries.owasp.org SSRF Prevention Cheat Sheet user supplied URL origin validation DNS public IP redirect",
+    "(site:w3.org/WAI/WCAG22/Understanding/ responsive forms error identification status messages keyboard focus reflow contrast) OR (site:web.dev Core Web Vitals responsive forms loading performance)"
+  ],
+  "investigation": {
+    "rounds": [
+      {
+        "round": 1,
+        "queries": [
+          "OWASP SSRF Prevention Cheat Sheet W3C WCAG 2.2 web.dev Core Web Vitals recommendations responsive accessible website URL risk checker origin validation",
+          "2026 latest OWASP SSRF DNS rebinding redirect prevention W3C WCAG updates web.dev performance guidance limitations disagreements URL safety checker"
+        ],
+        "pages_attempted": 0,
+        "sources_loaded": 0,
+        "facts_kept": 0,
+        "criteria": {
+          "criteria": [
+            {
+              "criterion": "SSRF prevention covering IP validation and redirects",
+              "covered": false,
+              "similarity": 0.0,
+              "by": ""
+            },
+            {
+              "criterion": "Keyboard accessibility and contrast guidance",
+              "covered": false,
+              "similarity": 0.0,
+              "by": ""
+            },
+            {
+              "criterion": "Core Web Vitals thresholds and measured-versus-inferred distinction",
+              "covered": false,
+              "similarity": 0.0,
+              "by": ""
+            }
+          ],
+          "met": false,
+          "uncovered": [
+            "SSRF prevention covering IP validation and redirects",
+            "Keyboard accessibility and contrast guidance",
+            "Core Web Vitals thresholds and measured-versus-inferred distinction"
+          ]
+        },
+        "corroborate": [],
+        "follow_up": {
+          "status": "MODEL_PROPOSAL",
+          "gaps": [
+            "No primary-source evidence identifies applicable OWASP SSRF Prevention Cheat Sheet recommendations for accepting an origin, validating its scheme and host, restricting destinations, handling DNS resolution and redirects, or preventing access to private, loopback, link-local and cloud metadata endpoints.",
+            "The checker’s architecture is unspecified: whether it makes server-side requests, follows redirects, resolves DNS or invokes third-party services remains unanswered, so the applicability of specific SSRF controls cannot be established.",
+            "No primary-source evidence establishes what “origin-only” means for accepted inputs, including handling of paths, queries, fragments, credentials, ports and normalized hostnames.",
+            "No W3C WCAG primary-source coverage identifies the relevant version, conformance level and success criteria for responsive reflow, keyboard access, focus, labels, validation errors, status announcements, contrast and target size.",
+            "No web.dev primary-source coverage identifies applicable performance recommendations for responsive assets, loading and rendering, JavaScript execution, layout stability or Core Web Vitals measurement.",
+            "There are no sources or dated facts from which to assess currency, contradictions or whether recommendations are supported by primary sources."
+          ],
+          "queries": [
+            "site:cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html SSRF domain validation DNS private IP redirects allowlist protocol",
+            "(site:w3.org/WAI/WCAG22/Understanding/ reflow keyboard focus labels errors status messages target size) OR (site:web.dev/articles/ Core Web Vitals responsive images JavaScript layout stability)"
+          ]
+        }
+      },
+      {
+        "round": 2,
+        "queries": [
+          "SSRF prevention covering IP validation and redirects",
+          "Keyboard accessibility and contrast guidance",
+          "site:cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html SSRF domain validation DNS private IP redirects allowlist protocol",
+          "(site:w3.org/WAI/WCAG22/Understanding/ reflow keyboard focus labels errors status messages target size) OR (site:web.dev/articles/ Core Web Vitals responsive images JavaScript layout stability)"
+        ],
+        "pages_attempted": 2,
+        "sources_loaded": 2,
+        "facts_kept": 0,
+        "criteria": {
+          "criteria": [
+            {
+              "criterion": "SSRF prevention covering IP validation and redirects",
+              "covered": false,
+              "similarity": 0.0,
+              "by": ""
+            },
+            {
+              "criterion": "Keyboard accessibility and contrast guidance",
+              "covered": false,
+              "similarity": 0.0,
+              "by": ""
+            },
+            {
+              "criterion": "Core Web Vitals thresholds and measured-versus-inferred distinction",
+              "covered": false,
+              "similarity": 0.0,
+              "by": ""
+            }
+          ],
+          "met": false,
+          "uncovered": [
+            "SSRF prevention covering IP validation and redirects",
+            "Keyboard accessibility and contrast guidance",
+            "Core Web Vitals thresholds and measured-versus-inferred distinction"
+          ]
+        },
+        "corroborate": [],
+        "follow_up": {
+          "status": "MODEL_PROPOSAL",
+          "gaps": [
+            "No primary-source OWASP guidance is provided on SSRF defenses applicable to fetching a user-supplied origin, including origin validation, DNS/IP checks, redirects, and blocking non-public destinations.",
+            "No primary-source WCAG requirements are provided for the responsive checker's input form, validation errors, keyboard operation, focus, accessible result announcements, contrast, or reflow.",
+            "No primary-source web.dev performance recommendations are provided for the checker's responsive interface, loading behavior, or performance measurement.",
+            "The evidence does not establish how an origin-only scope affects applicable recommendations or which recommendations concern server-side fetching versus the browser interface.",
+            "The two Wikipedia sources provide no extracted facts or recommendation-level support; their publication metadata cannot establish the currency of OWASP, WCAG, or web.dev guidance."
+          ],
+          "queries": [
+            "site:cheatsheetseries.owasp.org SSRF Prevention Cheat Sheet user supplied URL origin validation DNS public IP redirect",
+            "(site:w3.org/WAI/WCAG22/Understanding/ responsive forms error identification status messages keyboard focus reflow contrast) OR (site:web.dev Core Web Vitals responsive forms loading performance)"
+          ]
+        }
+      },
+      {
+        "round": 3,
+        "queries": [
+          "site:cheatsheetseries.owasp.org SSRF Prevention Cheat Sheet user supplied URL origin validation DNS public IP redirect",
+          "(site:w3.org/WAI/WCAG22/Understanding/ responsive forms error identification status messages keyboard focus reflow contrast) OR (site:web.dev Core Web Vitals responsive forms loading performance)"
+        ],
+        "pages_attempted": 0,
+        "sources_loaded": 0,
+        "facts_kept": 0,
+        "criteria": {
+          "criteria": [
+            {
+              "criterion": "SSRF prevention covering IP validation and redirects",
+              "covered": false,
+              "similarity": 0.0,
+              "by": ""
+            },
+            {
+              "criterion": "Keyboard accessibility and contrast guidance",
+              "covered": false,
+              "similarity": 0.0,
+              "by": ""
+            },
+            {
+              "criterion": "Core Web Vitals thresholds and measured-versus-inferred distinction",
+              "covered": false,
+              "similarity": 0.0,
+              "by": ""
+            }
+          ],
+          "met": false,
+          "uncovered": [
+            "SSRF prevention covering IP validation and redirects",
+            "Keyboard accessibility and contrast guidance",
+            "Core Web Vitals thresholds and measured-versus-inferred distinction"
+          ]
+        },
+        "follow_up": {
+          "status": "MODEL_PROPOSAL",
+          "gaps": [
+            "No primary-source OWASP SSRF guidance establishes which controls apply to origin-only inputs, including URL parsing and scheme restrictions, destination allowlisting or validation, private and special-use IP blocking, DNS resolution and rebinding, redirects, and network-layer restrictions.",
+            "No primary-source WCAG guidance identifies applicable accessibility requirements for the responsive checker’s inputs, validation errors, advisory results, keyboard interaction, focus visibility, contrast, reflow, or assistive-technology announcements.",
+            "No primary-source web.dev guidance identifies applicable performance recommendations or current measurement targets for responsive loading, rendering, interaction responsiveness, and layout stability.",
+            "The checker’s architecture is unspecified: whether it makes server-side requests, follows redirects, resolves DNS, or only evaluates an origin locally. This prevents determining which SSRF recommendations apply.",
+            "The provided Wikipedia sources contain no extracted facts and do not establish current OWASP, WCAG, or web.dev recommendations; the available date metadata does not demonstrate freshness."
+          ],
+          "queries": [
+            "site:cheatsheetseries.owasp.org \"Server Side Request Forgery Prevention Cheat Sheet\" URL validation DNS redirects private IP addresses",
+            "(site:w3.org/WAI/WCAG22/ OR site:web.dev) responsive form accessibility error identification status messages reflow Core Web Vitals performance recommendations"
+          ]
+        }
+      }
+    ],
+    "max_rounds": 3,
+    "page_limit": 5,
+    "stop_reason": "round_limit",
+    "coverage_status": "MODEL_PROPOSAL",
+    "unresolved_gaps": [
+      "Not yet covered: SSRF prevention covering IP validation and redirects",
+      "Not yet covered: Keyboard accessibility and contrast guidance",
+      "Not yet covered: Core Web Vitals thresholds and measured-versus-inferred distinction",
+      "No primary-source OWASP SSRF guidance establishes which controls apply to origin-only inputs, including URL parsing and scheme restrictions, destination allowlisting or validation, private and special-use IP blocking, DNS resolution and rebinding, redirects, and network-layer restrictions.",
+      "No primary-source WCAG guidance identifies applicable accessibility requirements for the responsive checker’s inputs, validation errors, advisory results, keyboard interaction, focus visibility, contrast, reflow, or assistive-technology announcements.",
+      "No primary-source web.dev guidance identifies applicable performance recommendations or current measurement targets for responsive loading, rendering, interaction responsiveness, and layout stability.",
+      "The checker’s architecture is unspecified: whether it makes server-side requests, follows redirects, resolves DNS, or only evaluates an origin locally. This prevents determining which SSRF recommendations apply.",
+      "The provided Wikipedia sources contain no extracted facts and do not establish current OWASP, WCAG, or web.dev recommendations; the available date metadata does not demonstrate freshness."
+    ],
+    "coverage_verified": false,
+    "criteria": {
+      "criteria": [
+        {
+          "criterion": "SSRF prevention covering IP validation and redirects",
+          "covered": false,
+          "similarity": 0.0,
+          "by": ""
+        },
+        {
+          "criterion": "Keyboard accessibility and contrast guidance",
+          "covered": false,
+          "similarity": 0.0,
+          "by": ""
+        },
+        {
+          "criterion": "Core Web Vitals thresholds and measured-versus-inferred distinction",
+          "covered": false,
+          "similarity": 0.0,
+          "by": ""
+        }
+      ],
+      "met": false,
+      "uncovered": [
+        "SSRF prevention covering IP validation and redirects",
+        "Keyboard accessibility and contrast guidance",
+        "Core Web Vitals thresholds and measured-versus-inferred distinction"
+      ]
+    },
+    "engine": "fused",
+    "tokens_used": 4056,
+    "token_budget": 40000
+  },
+  "sources": [
+    {
+      "id": "S1",
+      "url": "https://en.wikipedia.org/wiki/Computer_accessibility",
+      "title": "Computer accessibility - Wikipedia",
+      "site": "wikipedia.org",
+      "kind": "web",
+      "published": "2003-12-23T08:56:47Z",
+      "retrieved_at": "2026-10-25T06:40:28Z",
+      "chars": 31273,
+      "sha256": "551c9271a1779b46f6beadfa0f63bec5785c3b047b7d2a0c69343af15316584f",
+      "read": "nothing relevant",
+      "credibility": 0.5148
+    },
+    {
+      "id": "S2",
+      "url": "https://en.wikipedia.org/wiki/Accessibility",
+      "title": "Accessibility - Wikipedia",
+      "site": "wikipedia.org",
+      "kind": "web",
+      "published": "",
+      "retrieved_at": "2026-10-25T06:40:28Z",
+      "chars": 60808,
+      "sha256": "59d35ec11061dee15a7d19b762d88b04c54e310018fef7d1bfe7197a3ae3241b",
+      "read": "nothing relevant",
+      "credibility": 0.5123
+    }
+  ],
+  "claims": [],
+  "conflicts": [],
+  "refused": [],
+  "stats": {
+    "pages_found": 2,
+    "sources_loaded": 2,
+    "sources_read": 2,
+    "facts_kept": 0,
+    "facts_refused_quote_not_in_page": 0,
+    "verified": 0,
+    "corroborated": 0,
+    "independence_verified": false,
+    "semantic_verification": "NOT_RUN",
+    "external": 0,
+    "user_provided": 0,
+    "stale": 0,
+    "seconds": 63.6,
+    "sources_unread": 0,
+    "answer_points": 0,
+    "answer_points_dropped": 0
+  },
+  "labels": {
+    "CORROBORATED": "two or more sites state it; quotes were located, but source independence and semantic support are not independently verified",
+    "EXTERNAL": "one site states it (exact quote found)",
+    "USER-PROVIDED": "the user's own files state it",
+    "STALE": "every source is older than the freshness this question needs",
+    "INFERRED": "reasoning from the facts above — the answer must say it is an inference",
+    "GENERATED": "made by PHRONEN (a draft, an example, a design) — not a fact about the world",
+    "UNKNOWN": "no source was found — the answer must say it is not known"
+  },
+  "pack_path": "/Users/ruthwikkakumani/Desktop/WEBSENTINIAL CAPSTONE/research/which-primary-source-owasp-ssrf-prevention-wcag-ac-20261025-0639-62eac6a7091b.json",
+  "brief_path": "/Users/ruthwikkakumani/Desktop/WEBSENTINIAL CAPSTONE/research/which-primary-source-owasp-ssrf-prevention-wcag-ac-20261025-0639-62eac6a7091b.md",
+  "evidence_path": "/Users/ruthwikkakumani/Desktop/WEBSENTINIAL CAPSTONE/research/which-primary-source-owasp-ssrf-prevention-wcag-ac-20261025-0639-62eac6a7091b.evidence.jsonl"
+}

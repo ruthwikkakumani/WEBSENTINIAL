@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io"
 	"log"
 	"net"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 	"time"
 
 	"websentinel/core/internal/assess"
+	"websentinel/core/internal/collect"
 	"websentinel/core/internal/history"
 	"websentinel/core/internal/model"
 )
@@ -141,20 +141,7 @@ func (s *Server) preflight(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) rdapUp() bool {
-	ctx, cancel := context.WithTimeout(context.Background(), 700*time.Millisecond)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimRight(s.RDAPBase, "/")+"/health", nil)
-	if err != nil {
-		return false
-	}
-	client := &http.Client{Timeout: 700 * time.Millisecond, Transport: &http.Transport{Proxy: nil}}
-	resp, err := client.Do(req)
-	if err != nil {
-		return false
-	}
-	io.Copy(io.Discard, io.LimitReader(resp.Body, 2048))
-	resp.Body.Close()
-	return resp.StatusCode == http.StatusOK
+	return (collect.Registry{Base: s.RDAPBase}).Health(context.Background())
 }
 
 func (s *Server) cors(w http.ResponseWriter, r *http.Request) bool {

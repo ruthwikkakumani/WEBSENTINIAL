@@ -1,0 +1,46 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: websentinel-ingress
+  namespace: websentinel
+  labels:
+    app.kubernetes.io/name: websentinel
+    app.kubernetes.io/part-of: websentinel
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - websentinel.local
+      secretName: websentinel-tls
+  rules:
+    - host: websentinel.local
+      http:
+        paths:
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: websentinel-core
+                port:
+                  name: http
+          - path: /rdap(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: websentinel-rdap
+                port:
+                  name: http
+          - path: /(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: websentinel-core
+                port:
+                  name: http

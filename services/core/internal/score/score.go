@@ -121,6 +121,68 @@ func Band(n int) (string, string) {
 	}
 }
 
+// VerdictThresholds documents the band boundaries as human-readable constants.
+// HighRiskMin is the minimum advisory score that triggers a high_risk verdict.
+// SuspiciousMin is the minimum advisory score that triggers a suspicious verdict.
+// SafeMax is the maximum advisory score that remains in the safe band.
+const (
+	VerdictHighRiskMin  = 59
+	VerdictSuspiciousMin = 24
+	VerdictSafeMax       = 23
+)
+
+// DocumentedRuleWeights indexes every constant used by the documented prototype
+// rules (rule=true findings). The map key is the finding ID and the value is
+// the point contribution.
+var DocumentedRuleWeights = map[string]int{
+	"scheme_http":    wScheme,
+	"cert_missing":   wCert,
+	"cert_invalid":   wCert,
+	"cert_expiry":    wExpiry,
+	"domain_age":     35, // worst case; actual value depends on ageWeight()
+	"record_updated": 10, // worst case; actual value depends on updateWeight()
+	"dnssec":         -wDNSSEC,
+}
+
+// CalculateRuleTotal derives the rule score from a slice of findings. Only
+// findings with Rule set to true contribute. The sum is floored at 0.
+func CalculateRuleTotal(findings []model.Finding) int {
+	total := 0
+	for _, f := range findings {
+		if f.Rule {
+			total += f.Weight
+		}
+	}
+	if total < 0 {
+		return 0
+	}
+	return total
+}
+
+// CalculateAdvisory sums both rule and non-rule weights, clamped to [0, 100].
+// This matches the advisory computation inside Score.
+func CalculateAdvisory(rule int, findings []model.Finding) int {
+	advisory := rule
+	for _, f := range findings {
+		if !f.Rule {
+			advisory += f.Weight
+		}
+	}
+	if advisory < 0 {
+		advisory = 0
+	}
+	if advisory > 100 {
+		advisory = 100
+	}
+	return advisory
+}
+
+// DetermineVerdict returns the verdict string and display label for an advisory
+// score. It delegates to Band.
+func DetermineVerdict(advisory int) (verdict, label string) {
+	return Band(advisory)
+}
+
 func appendCert(findings []model.Finding, rule int, f Facts) ([]model.Finding, int) {
 	c := f.Certificate
 	if c != nil && c.Error == "not contacted" {

@@ -31,7 +31,7 @@ public final class Main {
         write(exchange, 200, body);
     }
 
-    private static void domain(HttpExchange exchange, Client client) throws IOException {
+    static void domain(HttpExchange exchange, Client client) throws IOException {
         if (!"GET".equals(exchange.getRequestMethod())) {
             write(exchange, 405, Record.unavailable("Use GET.").toJson().getBytes(StandardCharsets.UTF_8));
             return;
@@ -42,6 +42,10 @@ public final class Main {
             return;
         }
         name = name.toLowerCase(java.util.Locale.ROOT);
+        if (!Client.validDomain(name)) {
+            write(exchange, 400, Record.unavailable("That is not a domain name this registry client will look up.").toJson().getBytes(StandardCharsets.UTF_8));
+            return;
+        }
         Record record = client.lookup(name);
         int status = record.found || record.error.isBlank() ? 200 : 200;
         write(exchange, status, record.toJson().getBytes(StandardCharsets.UTF_8));

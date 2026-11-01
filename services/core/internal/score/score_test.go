@@ -7,6 +7,8 @@ import (
 	"websentinel/core/internal/model"
 )
 
+// ── Band / verdict tests ──────────────────────────────────────────────
+
 func TestBands(t *testing.T) {
 	cases := []struct {
 		n int
@@ -21,6 +23,41 @@ func TestBands(t *testing.T) {
 		}
 	}
 }
+
+func TestDetermineVerdict(t *testing.T) {
+	tests := []struct {
+		score   int
+		wantV   string
+		wantLbl string
+	}{
+		{0, "safe", "Safe"},
+		{23, "safe", "Safe"},
+		{24, "suspicious", "Suspicious"},
+		{58, "suspicious", "Suspicious"},
+		{59, "high_risk", "High risk"},
+		{100, "high_risk", "High risk"},
+	}
+	for _, tc := range tests {
+		v, lbl := DetermineVerdict(tc.score)
+		if v != tc.wantV || lbl != tc.wantLbl {
+			t.Errorf("DetermineVerdict(%d) = (%q, %q), want (%q, %q)", tc.score, v, lbl, tc.wantV, tc.wantLbl)
+		}
+	}
+}
+
+func TestVerdictConstants(t *testing.T) {
+	if VerdictHighRiskMin != 59 {
+		t.Errorf("VerdictHighRiskMin = %d, want 59", VerdictHighRiskMin)
+	}
+	if VerdictSuspiciousMin != 24 {
+		t.Errorf("VerdictSuspiciousMin = %d, want 24", VerdictSuspiciousMin)
+	}
+	if VerdictSafeMax != 23 {
+		t.Errorf("VerdictSafeMax = %d, want 23", VerdictSafeMax)
+	}
+}
+
+// ── Paper rules tests ─────────────────────────────────────────────────
 
 func TestPaperRules(t *testing.T) {
 	now := time.Date(2026, 10, 18, 12, 0, 0, 0, time.UTC)
@@ -79,6 +116,8 @@ func TestPaperRules(t *testing.T) {
 	}
 }
 
+// ── Extended signals must stay out of the rule score ──────────────────
+
 func TestExtendedSignalsStayOutOfTheRuleScore(t *testing.T) {
 	now := time.Date(2026, 10, 18, 12, 0, 0, 0, time.UTC)
 	old := now.AddDate(-10, 0, 0).Format(time.RFC3339)
@@ -95,6 +134,8 @@ func TestExtendedSignalsStayOutOfTheRuleScore(t *testing.T) {
 		t.Fatalf("advisory=%d verdict=%s, want suspicious from the brand observation alone", got.Advisory, got.Verdict)
 	}
 }
+
+// ── Look-alike and host tests ─────────────────────────────────────────
 
 func TestLookalikes(t *testing.T) {
 	now := time.Date(2026, 10, 18, 12, 0, 0, 0, time.UTC)
@@ -166,5 +207,210 @@ func TestBlockedRedirectIsNotARule(t *testing.T) {
 	}
 	if got.Advisory != wBlocked {
 		t.Fatalf("advisory %d", got.Advisory)
+	}
+}
+
+// ── New public API tests ──────────────────────────────────────────────
+
+func TestCalculateRuleTotal(t *testing.T) {
+	tests := []struct {
+		name    string
+		find    []model.Finding
+		want    int
+	}{
+		{
+			name: "empty slice",
+			find: nil,
+			want: 0,
+		},
+		{
+			name: "only rule findings count",
+			find: []model.Finding{
+				{ID: "scheme_http", Rule: true, Weight: 20},
+				{ID: "cert_invalid", Rule: true, Weight: 20},
+				{ID: "host_bait", Rule: false, Weight: 12},
+			},
+			want: 40,
+		},
+		{
+			name: "negative weights can bring total below zero, clamped to zero",
+			find: []model.Finding{
+				{ID: "dnssec", Rule: true, Weight: -3},
+			},
+			want: 0,
+		},
+		{
+			name: "mixed rule and non-rule",
+			find: []model.Finding{
+				{ID: "scheme_http", Rule: true, Weight: 20},
+				{ID: "domain_age", Rule: true, Weight: 35},
+				{ID: "dnssec", Rule: true, Weight: -3},
+				{ID: "brand_lookalike", Rule: false, Weight: 28},
+				{ID: "cheap_tld", Rule: false, Weight: 10},
+			},
+			want: 52, // 20+35-3 = 52
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := CalculateRuleTotal(tc.find)
+			if got != tc.want {
+				t.Errorf("CalculateRuleTotal = %d, want %d", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestCalculateAdvisory(t *testing.T) {
+	tests := []struct {
+		name    string
+		rule    int
+		find    []model.Finding
+		want    int
+	}{
+		{
+			name: "only rule, no extras",
+			rule: 40,
+			find: nil,
+			want: 40,
+		},
+		{
+			name: "rule plus extras, under cap",
+			rule: 20,
+			find: []model.Finding{
+				{ID: "brand_lookalike", Rule: false, Weight: 28},
+				{ID: "host_bait", Rule: false, Weight: 12},
+			},
+			want: 60,
+		},
+		{
+			name: "capped at 100",
+			rule: 85,
+			find: []model.Finding{
+				{ID: "brand_lookalike", Rule: false, Weight: 28},
+			},
+			want: 100,
+		},
+		{
+			name: "negative advisory clamped to zero",
+			rule: 0,
+			find: []model.Finding{
+				{ID: "negative_test", Rule: false, Weight: -10},
+			},
+			want: 0,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := CalculateAdvisory(tc.rule, tc.find)
+			if got != tc.want {
+				t.Errorf("CalculateAdvisory(%d, _) = %d, want %d", tc.rule, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestDocumentedRuleWeights(t *testing.T) {
+	if DocumentedRuleWeights["scheme_http"] != wScheme {
+		t.Errorf("scheme_http = %d", DocumentedRuleWeights["scheme_http"])
+	}
+	if DocumentedRuleWeights["cert_missing"] != wCert {
+		t.Errorf("cert_missing = %d", DocumentedRuleWeights["cert_missing"])
+	}
+	if DocumentedRuleWeights["cert_invalid"] != wCert {
+		t.Errorf("cert_invalid = %d", DocumentedRuleWeights["cert_invalid"])
+	}
+	if DocumentedRuleWeights["cert_expiry"] != wExpiry {
+		t.Errorf("cert_expiry = %d", DocumentedRuleWeights["cert_expiry"])
+	}
+	if DocumentedRuleWeights["dnssec"] != -wDNSSEC {
+		t.Errorf("dnssec = %d, want %d", DocumentedRuleWeights["dnssec"], -wDNSSEC)
+	}
+}
+
+// ── Integration-style: Score() produces correct Calculate* round-trip ──
+
+func TestScoreRoundTripWithPublicAPI(t *testing.T) {
+	now := time.Date(2026, 10, 18, 12, 0, 0, 0, time.UTC)
+	r := Score(Facts{
+		Now: now, Scheme: "http", Hostname: "new-phish.example",
+		Certificate:  &model.Certificate{Checked: true, Valid: false, Error: "expired"},
+		Registration: &model.Registration{Found: true, Registered: now.AddDate(0, 0, -2).Format(time.RFC3339), DNSSECKnown: true},
+	})
+
+	ruleBack := CalculateRuleTotal(r.Findings)
+	if ruleBack != r.Rule {
+		t.Errorf("CalculateRuleTotal(%d) ≠ Score.Rule(%d)", ruleBack, r.Rule)
+	}
+
+	advBack := CalculateAdvisory(r.Rule, r.Findings)
+	if advBack != r.Advisory {
+		t.Errorf("CalculateAdvisory(%d) ≠ Score.Advisory(%d)", advBack, r.Advisory)
+	}
+
+	v, lbl := DetermineVerdict(r.Advisory)
+	if v != r.Verdict || lbl != r.Label {
+		t.Errorf("DetermineVerdict mismatch: (%q,%q) vs (%q,%q)", v, lbl, r.Verdict, r.Label)
+	}
+}
+
+// ── Helper tests ──────────────────────────────────────────────────────
+
+func TestDaysBetween(t *testing.T) {
+	base := time.Date(2026, 10, 18, 12, 0, 0, 0, time.UTC)
+	if d := daysBetween(base, base); d != 0 {
+		t.Fatalf("same day: %d", d)
+	}
+	if d := daysBetween(base.AddDate(0, 0, 1), base); d != -1 {
+		t.Fatalf("future: %d", d)
+	}
+	if d := daysBetween(base.AddDate(0, 0, -1), base); d != 1 {
+		t.Fatalf("1 day ago: %d", d)
+	}
+	if d := daysBetween(base.AddDate(0, 0, -365), base); d != 365 {
+		t.Fatalf("1 year: %d", d)
+	}
+}
+
+func TestIsIP(t *testing.T) {
+	if !isIP("8.8.8.8") {
+		t.Fatal("8.8.8.8")
+	}
+	if !isIP("::1") {
+		t.Fatal("::1")
+	}
+	if isIP("example.com") {
+		t.Fatal("example.com")
+	}
+}
+
+func TestSeverityFor(t *testing.T) {
+	if s := severityFor(20); s != "risk" {
+		t.Fatalf("20 -> %s", s)
+	}
+	if s := severityFor(1); s != "caution" {
+		t.Fatalf("1 -> %s", s)
+	}
+	if s := severityFor(0); s != "info" {
+		t.Fatalf("0 -> %s", s)
+	}
+	if s := severityFor(-3); s != "info" {
+		t.Fatalf("-3 -> %s", s)
+	}
+}
+
+func TestOrder(t *testing.T) {
+	f := []model.Finding{
+		{ID: "a", Weight: 10},
+		{ID: "b", Weight: 30},
+		{ID: "c", Weight: 20},
+		{ID: "d", Weight: 30},
+	}
+	got := order(f)
+	if got[0].ID != "b" && got[0].ID != "d" {
+		t.Fatalf("first %s, want b or d", got[0].ID)
+	}
+	if got[0].Weight != 30 {
+		t.Fatalf("first weight %d", got[0].Weight)
 	}
 }

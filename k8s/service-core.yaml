@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: websentinel-core
+  namespace: websentinel
+  labels:
+    app: websentinel-core
+    app.kubernetes.io/name: websentinel-core
+    app.kubernetes.io/component: core
+    app.kubernetes.io/part-of: websentinel
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+  selector:
+    app: websentinel-core

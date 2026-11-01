@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: websentinel-core-pdb
+  namespace: websentinel
+  labels:
+    app.kubernetes.io/name: websentinel-core
+    app.kubernetes.io/part-of: websentinel
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: websentinel-core

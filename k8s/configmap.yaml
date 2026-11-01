@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: websentinel-config
+  namespace: websentinel
+  labels:
+    app.kubernetes.io/name: websentinel
+    app.kubernetes.io/part-of: websentinel
+data:
+  RDAP_BASE: "http://websentinel-rdap:8082"
+  REDIS_ADDR: "websentinel-redis:6379"
+  SENTINEL_ADDR: "0.0.0.0:8080"
+  SENTINEL_DATA: "/data/history.json"
+  GO_ENV: "production"

@@ -1,10 +1,16 @@
 {
   "manifest_version": 3,
-  "name": "WebSentinel",
-  "version": "1.0.0",
-  "description": "Check the public record of the site in this tab before you trust the link. Only the origin is sent.",
+  "name": "WebSentinel Guard",
+  "short_name": "WebSentinel Guard",
+  "version": "2.0.0",
+  "version_name": "2.0.0",
+  "description": "Check the public record of any link before you trust it. Only the origin is sent.",
+  "author": "WebSentinel Team",
+  "homepage_url": "https://websentinel.app",
+  "minimum_chrome_version": "109",
+
   "action": {
-    "default_title": "Check this site",
+    "default_title": "Check this site with WebSentinel Guard",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
@@ -13,12 +19,51 @@
       "128": "icons/icon128.png"
     }
   },
+
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": ["activeTab"],
-  "host_permissions": ["http://127.0.0.1:8080/*"]
+
+  "permissions": [
+    "activeTab",
+    "storage",
+    "alarms",
+    "contextMenus",
+    "notifications",
+    "webNavigation"
+  ],
+
+  "host_permissions": [
+    "http://127.0.0.1:8080/*",
+    "https://127.0.0.1:8080/*"
+  ],
+
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; connect-src http://127.0.0.1:8080 https://127.0.0.1:8080; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;"
+  },
+
+  "commands": {
+    "check-site": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "MacCtrl+Shift+S"
+      },
+      "description": "Check the current tab with WebSentinel"
+    }
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }

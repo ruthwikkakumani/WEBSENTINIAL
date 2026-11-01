@@ -4,26 +4,85 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark" />
-    <title>WebSentinel</title>
+    <title>WebSentinel Guard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <header class="bar">
-      <span class="mark" aria-hidden="true"></span>
-      <strong>WebSentinel</strong>
+    <header class="topbar">
+      <div class="brand">
+        <svg class="shield" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path class="shield-body" d="M12 2l7 3v6c0 4.2-2.8 8.2-7 10-4.2-1.8-7-5.8-7-10V5l7-3z" />
+          <path class="shield-check" d="M9 12l2 2 4-4" stroke-dasharray="8" stroke-dashoffset="0" />
+        </svg>
+        <span class="brand-name">WebSentinel</span>
+        <span class="brand-badge">GUARD</span>
+      </div>
+      <div class="status-dot" id="statusDot" title="Checking…"></div>
     </header>
-    <p id="host" class="host">Reading this tab…</p>
+
+    <section class="origin-bar" id="originBar">
+      <span class="origin-label">CURRENT TAB</span>
+      <span class="origin-host" id="host">Reading this tab…</span>
+    </section>
+
+    <!-- Manual input (shown when running outside extension) -->
     <form id="manual" class="manual" hidden>
       <label for="manual-url">Link</label>
       <input id="manual-url" autocomplete="off" spellcheck="false" placeholder="https://" />
     </form>
-    <button id="go" type="button">Check this tab</button>
-    <p id="status" class="status" role="status"></p>
-    <section id="result" hidden></section>
-    <p class="fine">Only the host is sent. A low score is not proof of safety.</p>
+
+    <button id="go" type="button" class="btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span>Check this tab</span>
+    </button>
+
+    <!-- Score ring + verdict -->
+    <section id="result" hidden>
+      <div class="ring-container">
+        <svg class="score-ring" width="120" height="120" viewBox="0 0 120 120">
+          <circle class="ring-bg" cx="60" cy="60" r="52" />
+          <circle class="ring-fill" id="ringFill" cx="60" cy="60" r="52"
+            stroke-dasharray="326.73" stroke-dashoffset="326.73" />
+          <text class="ring-score" id="ringScore" x="60" y="56" text-anchor="middle">—</text>
+          <text class="ring-label" x="60" y="76" text-anchor="middle">SAFETY</text>
+        </svg>
+        <span class="verdict-badge" id="verdictBadge">—</span>
+      </div>
+
+      <div class="domains-bar">
+        <span class="costume-part" id="costumePart"></span><span class="dot-sep">.</span><span class="owner-part" id="ownerPart"></span>
+      </div>
+
+      <div class="findings-panel">
+        <div class="findings-header">Top findings</div>
+        <ul class="findings-list" id="findingsList"></ul>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-caution" id="copyCaution" data-caution>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy caution
+        </button>
+        <a class="btn-link" id="openCaseFile" href="#" target="_blank" rel="noreferrer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Open case file
+        </a>
+      </div>
+    </section>
+
+    <p id="status" class="status" role="status">Ready</p>
+
+    <footer class="footer">
+      <span class="fine">Only the host is sent. A low score is not proof of safety.</span>
+      <a href="#" class="settings-link" id="settingsLink">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Settings
+      </a>
+    </footer>
+
     <script src="popup.js"></script>
   </body>
 </html>

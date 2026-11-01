@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: websentinel-rdap
+  namespace: websentinel
+  labels:
+    app: websentinel-rdap
+    app.kubernetes.io/name: websentinel-rdap
+    app.kubernetes.io/component: rdap
+    app.kubernetes.io/part-of: websentinel
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: websentinel-rdap
+  template:
+    metadata:
+      labels:
+        app: websentinel-rdap
+        app.kubernetes.io/name: websentinel-rdap
+        app.kubernetes.io/component: rdap
+        app.kubernetes.io/part-of: websentinel
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8082"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      serviceAccountName: websentinel-rdap
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: rdap
+          image: ghcr.io/websentinel/rdap:latest
+          imagePullPolicy: Always
+          args: ["8082"]
+          ports:
+            - name: http
+              containerPort: 8082
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 12
