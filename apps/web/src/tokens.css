@@ -1,57 +1,142 @@
-/* WebSentinel Enterprise — Design Tokens */
+/* ═══════════════════════════════════════════════════════════════
+   WebSentinel Enterprise — Premium Design Token System v2
+   ═══════════════════════════════════════════════════════════════ */
+
 :root {
-  /* Backgrounds */
-  --bg: #07080a;
-  --bg-elevated: #0d0f12;
-  --surface: #111418;
+  /* ── Core palette ── */
+  --ws-bg: #05070e;
+  --ws-bg-elevated: #090b18;
+  --ws-bg-card: #0d1022;
+  --ws-bg-card-hover: #13172e;
+  --ws-surface: #0d1022;
+  --ws-surface-hover: #151a32;
+  --ws-surface-active: #1a1f3a;
 
-  /* Glass */
-  --glass: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.06);
-  --glass-hover: rgba(255, 255, 255, 0.06);
-  --glass-strong: rgba(255, 255, 255, 0.06);
+  /* ── Brand ── */
+  --ws-brand: #00e5be;
+  --ws-brand-dim: #00b89a;
+  --ws-brand-glow: rgba(0, 229, 190, 0.15);
+  --ws-brand-glow-intense: rgba(0, 229, 190, 0.3);
 
-  /* Text */
-  --ink: #e8eaed;
-  --ink-muted: #9aa0a6;
-  --ink-dim: #70757a;
+  /* ── Accent ── */
+  --ws-accent: #7c8aff;
+  --ws-accent-dim: #5a67d8;
+  --ws-accent-glow: rgba(124, 138, 255, 0.15);
 
-  /* Semantic */
-  --accent: #4f8cff;
-  --accent-hover: #6ba3ff;
-  --accent-glow: rgba(79, 140, 255, 0.18);
-  --accent-dim: rgba(79, 140, 255, 0.10);
+  /* ── Alert / Signal ── */
+  --ws-safe: #22d68c;
+  --ws-safe-bg: rgba(34, 214, 140, 0.08);
+  --ws-suspicious: #f5a623;
+  --ws-suspicious-bg: rgba(245, 166, 35, 0.08);
+  --ws-risk: #ff4757;
+  --ws-risk-bg: rgba(255, 71, 87, 0.08);
 
-  --safe: #22c55e;
-  --safe-dim: rgba(34, 197, 94, 0.10);
-  --safe-glow: rgba(34, 197, 94, 0.20);
+  /* ── Text ── */
+  --ws-ink: #e8eaf0;
+  --ws-ink-muted: #9399b3;
+  --ws-ink-dim: #5c6180;
+  --ws-ink-inverse: #05070e;
 
-  --warn: #f59e0b;
-  --warn-dim: rgba(245, 158, 11, 0.10);
-  --warn-glow: rgba(245, 158, 11, 0.20);
+  /* ── Borders ── */
+  --ws-line: rgba(124, 138, 255, 0.08);
+  --ws-line-strong: rgba(124, 138, 255, 0.18);
 
-  --risk: #ef4444;
-  --risk-dim: rgba(239, 68, 68, 0.10);
-  --risk-glow: rgba(239, 68, 68, 0.20);
+  /* ── Glass ── */
+  --ws-glass: rgba(13, 16, 34, 0.6);
+  --ws-glass-border: rgba(124, 138, 255, 0.06);
 
-  /* Lines */
-  --line: rgba(255, 255, 255, 0.08);
+  /* ── Shadows ── */
+  --ws-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --ws-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --ws-shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.6);
+  --ws-shadow-glow-brand: 0 0 20px rgba(0, 229, 190, 0.08);
+  --ws-shadow-glow-accent: 0 0 20px rgba(124, 138, 255, 0.08);
 
-  /* Typography */
-  --font: "Inter", "SF Pro", system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", ui-monospace, monospace;
+  /* ── Type ── */
+  --ws-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --ws-font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --ws-font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 
-  /* Radii */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
+  /* ── Radii ── */
+  --ws-radius-sm: 6px;
+  --ws-radius-md: 10px;
+  --ws-radius-lg: 16px;
+  --ws-radius-xl: 24px;
 
-  /* Easing */
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* ── Easing ── */
+  --ws-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ws-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ws-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Shadows */
-  --shadow-glass: 0 4px 24px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 30px rgba(79, 140, 255, 0.06);
+  /* ── Z-index ── */
+  --ws-z-base: 1;
+  --ws-z-elevated: 10;
+  --ws-z-overlay: 50;
+  --ws-z-modal: 100;
+
+  /* ── App-specific ── */
+  --nav-height: 64px;
+  --max-width: 1200px;
+}
+
+/* ── Gradient utilities ── */
+.ws-gradient-brand {
+  background: linear-gradient(135deg, #00e5be 0%, #7c8aff 100%);
+}
+.ws-gradient-warm {
+  background: linear-gradient(135deg, #f5a623 0%, #ff4757 100%);
+}
+.ws-gradient-cool {
+  background: linear-gradient(135deg, #7c8aff 0%, #00e5be 100%);
+}
+.ws-gradient-text {
+  background: linear-gradient(135deg, #00e5be 0%, #7c8aff 50%, #b794f4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@theme {
+  --color-ink: #e8eaf0;
+  --color-ink-muted: #9399b3;
+  --color-ink-dim: #5c6180;
+  --color-accent: #7c8aff;
+  --color-warning: #f5a623;
+  --color-warn: #f5a623;
+  --color-risk: #ff4757;
+  --color-glass: rgba(13, 16, 34, 0.6);
+  --color-glass-border: rgba(124, 138, 255, 0.06);
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+/* ── Animations ── */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes breathe {
+  0%, 100% { box-shadow: 0 0 20px var(--ws-brand-glow); }
+  50% { box-shadow: 0 0 40px var(--ws-brand-glow-intense); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }

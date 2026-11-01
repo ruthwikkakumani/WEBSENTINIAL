@@ -1,440 +1,528 @@
-import { useEffect, useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { assess, CheckError, fetchHealth, fetchHistory } from './api'
-import { Compare } from './compare'
-import { HistoryPage } from './history'
-import { Method } from './method'
-import { PrepareError, prepare, previewHost } from './origin'
+/* ════════════════════════════════════════════════════════
+   WebSentinel Enterprise — App root & Landing page
+   ════════════════════════════════════════════════════════ */
+
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
+import { Routes, Route, Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import {
+  Shield,
+  Search,
+  Activity,
+  Menu,
+  X,
+  ExternalLink,
+  AlertTriangle,
+  CheckCircle,
+  Globe,
+  Server,
+  Lock,
+  Layers,
+  ArrowRight,
+} from 'lucide-react'
+
+import { assess, CheckError, fetchHealth } from './api'
+import { PrepareError, prepare } from './origin'
 import { Report } from './report'
-import { WatchPage } from './watchPage'
-import { About } from './About'
+import { ScanPreview, healthLabel, recheckOrigin } from './ScanPreview'
+
+const HistoryPage = lazy(() => import('./history').then(m => ({ default: m.HistoryPage })))
+const Compare = lazy(() => import('./compare').then(m => ({ default: m.Compare })))
+const About = lazy(() => import('./About').then(m => ({ default: m.About })))
+const Clients = lazy(() => import('./clients').then(m => ({ default: m.Clients })))
+const Method = lazy(() => import('./method').then(m => ({ default: m.Method })))
+const Signals = lazy(() => import('./signals').then(m => ({ default: m.Signals })))
+const Limits = lazy(() => import('./limits').then(m => ({ default: m.Limits })))
+const WatchPage = lazy(() => import('./watchPage').then(m => ({ default: m.WatchPage })))
+
 import type { Assessment, Health } from './types'
 
-/* ── Inline SVG icons ── */
-function Seal() {
-  return (
-    <svg className="seal" viewBox="0 0 32 32" aria-hidden="true">
-      <path d="M11 6H7v20h4M21 6h4v20h-4" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="16" cy="16" r="2.1" fill="currentColor" />
-    </svg>
-  )
-}
-function IconShield() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a12 12 0 0 0-8.5 3A12 12 0 0 0 12 21a12 12 0 0 0 8.5-18A12 12 0 0 0 12 3Z"/><path d="m9 12 2 2 4-4"/></svg>
-  )
-}
-function IconBook() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 1 4 19.5Z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/></svg>
-  )
-}
-function IconClock() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-  )
-}
-function IconEye() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-  )
-}
-function IconGitBranch() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
-  )
-}
+/* ── Page transition variants ── */
 
 const pageVariants = {
   initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] as const } },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } },
   exit: { opacity: 0, y: -8, transition: { duration: 0.2 } },
-} as const
+}
 
-const stories = [
-  { title: 'example.com', detail: 'Old name, certificate verifies.', url: 'https://example.com' },
-  { title: 'neverssl.com', detail: 'The address itself is plain HTTP.', url: 'http://neverssl.com' },
-  { title: 'expired.badssl.com', detail: 'A certificate a browser would reject.', url: 'https://expired.badssl.com' },
-  { title: '127.0.0.1', detail: 'Local. Must be refused.', url: 'http://127.0.0.1/' },
-  { title: 'sbi.example.com', detail: 'Bank word on someone else’s domain. Constructed.', url: 'https://sbi.example.com/' },
-  { title: 'kyc-otp.tk', detail: 'KYC word on a cheap TLD. Constructed.', url: 'https://kyc-otp.tk/' },
+/* ── Checker input state ── */
+
+type CheckState =
+  | { phase: 'idle'; cancelled?: boolean }
+  | { phase: 'preparing' }
+  | { phase: 'assessing'; startedAt: number }
+  | { phase: 'done'; assessment: Assessment; discarded: boolean }
+  | { phase: 'error'; message: string; code: string }
+
+/* ── Nav items ── */
+
+const NAV = [
+  { to: '/', label: 'Check' },
+  { to: '/history', label: 'History' },
+  { to: '/compare', label: 'Compare' },
+  { to: '/watch', label: 'Watch' },
+  { to: '/method', label: 'Method' },
+  { to: '/about', label: 'About' },
 ]
 
-const ticks = ['Certificate · 443', 'Registry date', 'Public DNS']
+/* ════════════════════════════════════════════════════════
+   NAVBAR
+   ════════════════════════════════════════════════════════ */
 
-const refusals: Record<string, { title: string; body: string }> = {
-  private_address: {
-    title: 'We refused to open this.',
-    body: 'The address points at this computer, a private network, or a cloud metadata service. It was not contacted. Do not open it in your browser either.',
-  },
-  blocked_host: {
-    title: 'We refused to open this.',
-    body: 'That name is reserved for a local network. It was not contacted.',
-  },
-  embedded_credentials: {
-    title: 'A password was in the link.',
-    body: 'It stayed in this browser and was not sent. Remove the username and password, then check the host on its own.',
-  },
-  unsupported_scheme: {
-    title: 'That is not a website link.',
-    body: 'Only ordinary http and https addresses can be checked.',
-  },
-  bad_port: {
-    title: 'That port was not opened.',
-    body: 'Only the ordinary web ports, 80 and 443, are contacted.',
-  },
-  single_label: {
-    title: 'That is not a public website name.',
-    body: 'A single-word host usually belongs to a local network, so it was not contacted.',
-  },
-  invalid_url: {
-    title: 'That is not a website address.',
-    body: 'Paste the whole link from the message, or type the host yourself.',
-  },
-}
+function Navbar() {
+  const reduced = useReducedMotion()
+  const [open, setOpen] = useState(false)
+  const location = useLocation()
+  const isHome = location.pathname === '/'
+  const menuRef = useRef<HTMLButtonElement>(null)
+  const mobileRef = useRef<HTMLElement>(null)
 
-export function App() {
-  const [path, setPath] = useState(window.location.pathname)
-  const [value, setValue] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [failure, setFailure] = useState<{ code: string; message: string } | null>(null)
-  const [discarded, setDiscarded] = useState(false)
-  const [report, setReport] = useState<Assessment | null>(null)
-  const [health, setHealth] = useState<Health | null | undefined>(undefined)
-  const [phase, setPhase] = useState(0)
-  const [help, setHelp] = useState(false)
-  const [recents, setRecents] = useState<string[]>([])
-  const inflight = useRef<AbortController | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const runRef = useRef<(input: string) => Promise<void>>(async () => {})
-
+  useEffect(() => { setOpen(false) }, [location.pathname])
   useEffect(() => {
-    const onPop = () => setPath(window.location.pathname)
-    window.addEventListener('popstate', onPop)
-    return () => window.removeEventListener('popstate', onPop)
-  }, [])
-
-  useEffect(() => {
-    let stop = false
-    const read = () => {
-      fetchHealth().then((next) => {
-        if (!stop) setHealth(next)
-      })
-    }
-    read()
-    const id = window.setInterval(read, 20000)
-    return () => {
-      stop = true
-      window.clearInterval(id)
-    }
-  }, [])
-
-  function go(next: string) {
-    window.history.pushState({}, '', next)
-    setPath(next)
-    window.scrollTo(0, 0)
-  }
-
-  useEffect(() => {
-    if (!loading) {
-      setPhase(0)
-      return
-    }
-    const id = window.setInterval(() => setPhase((n) => Math.min(n + 1, 2)), 900)
-    return () => window.clearInterval(id)
-  }, [loading])
-
-  useEffect(() => {
-    if (!report && !failure) return
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const target = document.getElementById('verdict-title') ?? document.getElementById('result')
-    target?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
-    if (target instanceof HTMLElement) target.focus({ preventScroll: true })
-  }, [report, failure])
-
-  async function run(input: string) {
-    inflight.current?.abort()
-    const controller = new AbortController()
-    inflight.current = controller
-    setLoading(true)
-    setFailure(null)
-    setReport(null)
-    try {
-      const prepared = prepare(input)
-      setValue(prepared.url)
-      const result = await assess(prepared.url, controller.signal)
-      if (controller.signal.aborted) return
-      setDiscarded(prepared.discarded)
-      setReport(result)
-    } catch (err) {
-      if (controller.signal.aborted || (err instanceof DOMException && err.name === 'AbortError')) return
-      setReport(null)
-      if (err instanceof CheckError || err instanceof PrepareError) {
-        setFailure({ code: err.code, message: err.message })
-      } else {
-        setFailure({ code: 'unavailable', message: 'The checker on this computer did not answer.' })
-      }
-    } finally {
-      if (inflight.current === controller) setLoading(false)
-    }
-  }
-  runRef.current = run
-
-  function another() {
-    inflight.current?.abort()
-    setLoading(false)
-    setFailure(null)
-    setReport(null)
-    setValue('')
-    setDiscarded(false)
-    inputRef.current?.focus()
-  }
-
-  const booted = useRef(false)
-  useEffect(() => {
-    if (booted.current) return
-    const check = new URLSearchParams(window.location.search).get('check')
-    if (!check) return
-    booted.current = true
-    void run(check)
-  }, [])
-
-  useEffect(() => {
-    fetchHistory()
-      .then((items) => {
-        const seen = new Set<string>()
-        const origins: string[] = []
-        for (const item of items) {
-          if (seen.has(item.origin)) continue
-          seen.add(item.origin)
-          origins.push(item.origin)
-          if (origins.length === 6) break
-        }
-        setRecents(origins)
-      })
-      .catch(() => setRecents([]))
-  }, [report])
-
-  useEffect(() => {
-    function onKey(event: KeyboardEvent) {
-      if (event.key === '?' && !event.metaKey && !event.ctrlKey && !(event.target instanceof HTMLInputElement)) {
-        event.preventDefault()
-        setHelp((on) => !on)
-      }
-      if (event.key === 'Escape') {
-        setHelp(false)
-        another()
-      }
-      if (event.key === '/' && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLTextAreaElement)) {
-        event.preventDefault()
-        go('/')
-        inputRef.current?.focus()
-      }
-    }
-    function onPaste(event: ClipboardEvent) {
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return
-      const text = event.clipboardData?.getData('text').trim()
-      if (!text) return
-      event.preventDefault()
-      go('/')
-      void runRef.current(text)
-    }
-    window.addEventListener('keydown', onKey)
-    window.addEventListener('paste', onPaste)
-    return () => {
-      window.removeEventListener('keydown', onKey)
-      window.removeEventListener('paste', onPaste)
-    }
-  }, [])
-
-  const page =
-    path === '/method'
-      ? 'method'
-      : path === '/history'
-        ? 'history'
-        : path === '/compare'
-          ? 'compare'
-          : path === '/watch'
-            ? 'watch'
-          : path === '/about'
-            ? 'about'
-            : 'assess'
-  const idle = page === 'assess' && !report && !failure && !loading
-  const root = [
-    'app',
-    page,
-    idle ? 'idle' : '',
-    loading ? 'busy' : '',
-    page === 'assess' && failure ? 'refused' : '',
-    page === 'assess' && report ? `verdict-${report.verdict}` : '',
-  ]
-    .filter(Boolean)
-    .join(' ')
+    if (open) mobileRef.current?.querySelector<HTMLAnchorElement>('a')?.focus()
+  }, [open])
 
   return (
-    <div className={root}>
-      <a className="skip" href="#main">
-        Skip to the check
-      </a>
-      <aside className="sidebar">
-        <button className="sidebar-brand" type="button" onClick={() => go('/')}>
-          <Seal />
-          <span>WebSentinel</span>
-        </button>
-        <nav className="sidebar-nav" aria-label="Primary">
-          {[
-            { p: 'assess', label: 'Check', icon: IconShield },
-            { p: 'method', label: 'Method', icon: IconBook },
-            { p: 'history', label: 'History', icon: IconClock },
-            { p: 'watch', label: 'Watch', icon: IconEye },
-            { p: 'compare', label: 'Compare', icon: IconGitBranch },
-            { p: 'about', label: 'About', icon: IconBook },
-          ].map(({ p, label, icon: Icon }) => (
-            <button key={p} type="button" aria-current={page === p ? 'page' : undefined} onClick={() => go(p === 'assess' ? '/' : `/${p}`)}>
-              <Icon /> {label}
-            </button>
+    <header className={`navbar ${isHome ? 'home' : ''}`}>
+      <div className="navbar-inner">
+        <Link to="/" className="logo" aria-label="WebSentinel home">
+          <Shield size={22} className="logo-icon" strokeWidth={2.2} />
+          <span className="logo-text">WebSentinel</span>
+          <span className="logo-badge">Local</span>
+        </Link>
+
+        <nav className="nav-desktop" aria-label="Main">
+          {NAV.map((n) => (
+            <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+              {n.label}
+            </NavLink>
           ))}
         </nav>
-        <div className="sidebar-foot">
-          <Status health={health} />
-          <p className="text-xs text-ink-dim leading-relaxed">
-            Go talks to the site. Java talks to the registry. This page only explains. Press <kbd className="px-1 py-0.5 border border-glass-border rounded font-mono text-[11px]">?</kbd> for keys.
-          </p>
-        </div>
-      </aside>
 
-      <div className="stage">
-        <main id="main">
-          <AnimatePresence mode="wait">
-            <motion.div key={page} variants={pageVariants} initial="initial" animate="animate" exit="exit">
-              {page === 'method' && <Method />}
-              {page === 'history' && <HistoryPage />}
-              {page === 'watch' && <WatchPage onCheck={(origin) => { go('/'); void run(origin) }} />}
-              {page === 'compare' && <Compare />}
-              {page === 'about' && <About />}
-              {page === 'assess' && (
-                <section className={idle ? 'idle-stage' : ''}>
-                  <div className="well">
-                    {idle && <p className="prompt">Paste the link before the OTP.</p>}
-                    <form className="composer" aria-busy={loading} onSubmit={(event) => { event.preventDefault(); if (!loading) void run(value) }}>
-                      <label className="sr" htmlFor="url">Link from the message</label>
-                      <input ref={inputRef} id="url" name="url" value={value} autoFocus autoComplete="off" autoCapitalize="off" autoCorrect="off" spellCheck={false} placeholder="https://" onChange={(event) => setValue(event.target.value)} onPaste={(event) => { const text = event.clipboardData.getData('text').trim(); if (!text) return; event.preventDefault(); setValue(text); void run(text) }} />
-                      <button type="submit" disabled={loading}>{loading ? 'Reading' : 'Check'}</button>
-                    </form>
-                    <p className="hint">
-                      Path, query, and password stay here. Only the host is sent.{' '}
-                      <button type="button" className="text-btn" onClick={async () => { try { const text = (await navigator.clipboard.readText()).trim(); if (text) void run(text) } catch { inputRef.current?.focus() } }}>Paste from clipboard</button>
-                    </p>
-                    {(report || failure) && <p className="again"><button type="button" className="btn btn-ghost" onClick={another}>Check another</button></p>}
-                    <LiveName input={value} hidden={Boolean(report)} loading={loading} phase={phase} />
-                  </div>
-                  {idle && recents.length > 0 && (
-                    <p className="recents" aria-label="Recent origins">
-                      {recents.map((origin) => (<button key={origin} type="button" onClick={() => void run(origin)}>{origin.replace(/^https?:\/\//, '')}</button>))}
-                    </p>
-                  )}
-                  {idle && (
-                    <details className="lab"><summary>Constructed examples</summary>
-                      <ul>{stories.map((s) => (<li key={s.url}><button type="button" onClick={() => void run(s.url)}><code>{s.title}</code><span>{s.detail}</span></button></li>))}</ul>
-                    </details>
-                  )}
-                  {failure && <Refusal failure={failure} />}
-                  {report && <Report assessment={report} discarded={discarded || report.discardedPath} />}
-                </section>
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </main>
+        <button ref={menuRef} type="button" className="menu-toggle btn btn-ghost" onClick={() => setOpen(!open)} aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} aria-controls="mobile-navigation">
+          {open ? <X size={20} /> : <Menu size={20} />}
+        </button>
       </div>
-      {help && (
-        <div className="help" role="dialog" aria-label="Keyboard">
-          <p className="kicker">Keys</p>
-          <ul>
-            <li><kbd>/</kbd> Focus the paste field</li>
-            <li><kbd>Esc</kbd> Check another</li>
-            <li><kbd>?</kbd> Close this</li>
-          </ul>
-          <p>Paste anywhere on the page. Only the host is sent.</p>
+
+      <AnimatePresence>
+        {open && (
+          <motion.nav
+            className="nav-mobile"
+            id="mobile-navigation"
+            ref={mobileRef}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                event.preventDefault(); setOpen(false); menuRef.current?.focus()
+              }
+              if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+                const links = Array.from(mobileRef.current?.querySelectorAll<HTMLAnchorElement>('a') ?? [])
+                const index = links.indexOf(document.activeElement as HTMLAnchorElement)
+                const next = event.key === 'Home' ? 0 : event.key === 'End' ? links.length - 1 :
+                  (index + (event.key === 'ArrowDown' ? 1 : -1) + links.length) % links.length
+                event.preventDefault(); links[next]?.focus()
+              }
+            }}
+            initial={reduced ? false : { opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduced ? undefined : { opacity: 0, y: -4 }}
+            transition={{ duration: reduced ? 0 : 0.16 }}
+            aria-label="Mobile navigation"
+          >
+            {NAV.map((n) => (
+              <NavLink key={n.to} to={n.to} end={n.to === '/'} onClick={() => setOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                {n.label}
+              </NavLink>
+            ))}
+          </motion.nav>
+        )}
+      </AnimatePresence>
+    </header>
+  )
+}
+
+/* ════════════════════════════════════════════════════════
+   FOOTER
+   ════════════════════════════════════════════════════════ */
+
+function Footer() {
+  return (
+    <footer className="app-footer">
+      <div className="footer-inner">
+        <div className="footer-brand">
+          <Shield size={16} strokeWidth={2} className="footer-icon" />
+          <span>WebSentinel</span>
         </div>
-      )}
+        <div className="footer-links">
+          <Link to="/about">About</Link>
+          <Link to="/method">Method</Link>
+          <Link to="/signals">Signal weights</Link>
+          <Link to="/limits">Privacy & limits</Link>
+          <Link to="/clients">Companion apps</Link>
+          <a href="https://github.com/ruthwikkakumani/websentinel" target="_blank" rel="noopener noreferrer">
+            GitHub <ExternalLink size={12} />
+          </a>
+        </div>
+        <p className="footer-legal">No login. No tracking. This page never contacts the site you paste.</p>
+      </div>
+    </footer>
+  )
+}
+
+/* ════════════════════════════════════════════════════════
+   APP ROOT
+   ════════════════════════════════════════════════════════ */
+
+export function App() {
+  const location = useLocation()
+  const reduced = useReducedMotion()
+  const previousPath = useRef(location.pathname)
+  const mainRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const label = NAV.find(n => n.to === location.pathname)?.label ?? ({ '/signals': 'Signal weights', '/limits': 'Privacy & limits', '/clients': 'Companion apps' } as Record<string, string>)[location.pathname] ?? 'Page not found'
+    document.title = `WebSentinel — ${label}`
+    if (previousPath.current !== location.pathname) {
+      previousPath.current = location.pathname
+      mainRef.current?.focus({ preventScroll: true })
+      window.scrollTo({ top: 0, behavior: 'instant' })
+    }
+  }, [location.pathname])
+  return (
+    <div className="app-shell">
+      <a className="skip-link" href="#main-content">Skip to content</a>
+      <Navbar />
+      <main className="app-main" id="main-content" tabIndex={-1} ref={mainRef}>
+        <Suspense fallback={<div className="route-loading" role="status"><span>Loading page…</span><div className="loading-line" /><div className="loading-block" /></div>}>
+        <motion.div className="route-shell" key={location.pathname} initial={reduced ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.18 }}>
+          <Routes location={location}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/history" element={<HistoryPage />} />
+            <Route path="/compare" element={<Compare />} />
+            <Route path="/watch" element={<WatchRoute />} />
+            <Route path="/method" element={<Method />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/clients" element={<Clients />} />
+            <Route path="/signals" element={<Signals />} />
+            <Route path="/limits" element={<Limits />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </motion.div>
+        </Suspense>
+      </main>
+      <Footer />
     </div>
   )
 }
 
-function LiveName({
-  input,
-  hidden,
-  loading,
-  phase,
-}: {
-  input: string
-  hidden: boolean
-  loading: boolean
-  phase: number
-}) {
-  const preview = hidden ? null : previewHost(input)
-  if (!preview && !loading) return null
+/* ════════════════════════════════════════════════════════
+   HOME PAGE — Hero + Checker + Feature Sections
+   ════════════════════════════════════════════════════════ */
+
+function WatchRoute() {
+  const navigate = useNavigate()
+  return <WatchPage onCheck={(raw) => {
+    const origin = recheckOrigin({ origin: raw })
+    if (origin) navigate('/', { state: { origin } })
+  }} />
+}
+
+function HomePage() {
+  const reduced = useReducedMotion()
+  const resultRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const location = useLocation()
+  const [input, setInput] = useState(() => recheckOrigin(location.state) ?? '')
+  const [state, setState] = useState<CheckState>({ phase: 'idle' })
+  const [health, setHealth] = useState<Health | null>(null)
+  const navigate = useNavigate()
+  const abortRef = useRef<AbortController | null>(null)
+
+  const healthAbortRef = useRef<AbortController | null>(null)
+  const [healthChecking, setHealthChecking] = useState(true)
+
+  const refreshHealth = useCallback(async () => {
+    healthAbortRef.current?.abort()
+    const ctrl = new AbortController()
+    healthAbortRef.current = ctrl
+    setHealthChecking(true)
+    try {
+      const result = await fetchHealth(ctrl.signal)
+      if (!ctrl.signal.aborted) setHealth(result)
+    } catch { /* Unmount/replacement abort is deliberately silent. */ }
+    finally { if (!ctrl.signal.aborted) setHealthChecking(false) }
+  }, [])
+
+  useEffect(() => {
+    void refreshHealth()
+    return () => { abortRef.current?.abort(); healthAbortRef.current?.abort() }
+  }, [refreshHealth])
+
+  const runCheck = useCallback(async (raw: string) => {
+    if (abortRef.current) abortRef.current.abort()
+    const ctrl = new AbortController()
+    abortRef.current = ctrl
+
+    setState({ phase: 'preparing' })
+    try {
+      const prepared = prepare(raw)
+      setInput(prepared.url)
+      setState({ phase: 'assessing', startedAt: Date.now() })
+      const assessment = await assess(prepared.url, ctrl.signal)
+      if (!ctrl.signal.aborted) {
+        setState({ phase: 'done', assessment, discarded: prepared.discarded })
+      }
+    } catch (err) {
+      if (ctrl.signal.aborted) return
+      if (err instanceof CheckError || err instanceof PrepareError) {
+        setState({ phase: 'error', message: err.message, code: err.code })
+      } else {
+        setState({ phase: 'error', message: 'The check could not be completed.', code: 'unavailable' })
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    const origin = recheckOrigin(location.state)
+    if (!origin) return
+    setInput(origin)
+    navigate('/', { replace: true, state: null })
+    void runCheck(origin)
+  }, [location.state, navigate, runCheck])
+
+  useEffect(() => {
+    if (state.phase === 'done') {
+      resultRef.current?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true })
+      resultRef.current?.scrollIntoView({ behavior: reduced ? 'instant' : 'smooth', block: 'start' })
+    }
+  }, [state.phase, reduced])
+
+  const cancelCheck = () => {
+    abortRef.current?.abort()
+    setState({ phase: 'idle', cancelled: true })
+  }
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault()
+    if (state.phase === 'assessing') return
+    void runCheck(input)
+  }
+
   return (
-    <div className="specimen" aria-live="polite">
-      {preview && (
-        <>
-          <p className="kicker">Sent as origin</p>
-          <p className="anatomy-name">
-            {preview.prefix ? (
-              <>
-                <span className="costume">{preview.prefix}</span>
-                <span className="dot">.</span>
-                <span className="owner">{preview.owner}</span>
-              </>
-            ) : (
-              <span className="owner">{preview.owner}</span>
-            )}
-          </p>
-          <p className="specimen-note">
-            {preview.prefix
-              ? `${preview.owner} is the likely registered domain. ${preview.prefix} sits in front of it.`
-              : 'This whole name is the likely registered domain.'}{' '}
-            {preview.discarded ? 'The path will not be sent.' : 'Nothing after the host will be sent.'}
-          </p>
-        </>
-      )}
-      {loading && (
-        <ol className="ticks" role="status">
-          {ticks.map((label, index) => (
-            <li key={label} className={index < phase ? 'done' : index === phase ? 'now' : ''}>
-              {label}
-            </li>
-          ))}
-        </ol>
-      )}
+    <div>
+      <section className="hero" aria-labelledby="check-title">
+        <div className="hero-content check-desk">
+          <div className="desk-intro">
+            <p className="hero-badge"><Lock size={13} aria-hidden="true" /> Local checker · public signals only</p>
+            <h1 className="hero-title" id="check-title">Pause before<br />you <span className="hero-emphasis">trust a link.</span></h1>
+            <p className="hero-lede">A certificate is not a promise. Read a website’s public signals, understand what is missing, and decide your next step with a clear case file.</p>
+            <div className="desk-links"><Link to="/method">See how a check works <ArrowRight size={15} aria-hidden="true" /></Link><Link to="/limits">Know the limits</Link></div>
+            <dl className="scope-grid">
+              <div className="scope-item"><dt><Shield size={16} aria-hidden="true" /> Public evidence</dt><dd>Certificate, registration, DNS and redirects.</dd></div>
+              <div className="scope-item"><dt><Lock size={16} aria-hidden="true" /> Origin only</dt><dd>Your path, query and fragment stay here.</dd></div>
+              <div className="scope-item"><dt><Layers size={16} aria-hidden="true" /> Explainable scores</dt><dd>Documented rules and extra observations, separate.</dd></div>
+              <div className="scope-item"><dt><Activity size={16} aria-hidden="true" /> Advisory, not certainty</dt><dd>A low score is never proof of safety.</dd></div>
+            </dl>
+          </div>
+          <div className="desk-console">
+            <div className="console-heading"><p className="console-kicker">01 / Check an origin</p><h2>Assess a public origin</h2><p className="console-meta">Paste a link. Review exactly what will be sent.</p></div>
+          <form className="check-form hero-form" onSubmit={handleSubmit} aria-busy={state.phase === 'assessing' || state.phase === 'preparing'}>
+            <label className="scan-label" htmlFor="origin-input">Website address</label>
+            <div className="check-input-wrap">
+              <Search size={16} className="input-icon" />
+              <input
+                type="text"
+                id="origin-input"
+                inputMode="url"
+                enterKeyHint="go"
+                autoCapitalize="none"
+                ref={inputRef}
+                aria-describedby="origin-preview"
+                aria-invalid={state.phase === 'error' && ['invalid_url', 'private_address', 'embedded_credentials', 'unsupported_scheme'].includes(state.code)}
+                className="check-input"
+                placeholder="https://example.com"
+                value={input}
+                onChange={(e) => {
+                  setInput(e.target.value)
+                  if (state.phase === 'error' && ['invalid_url', 'private_address', 'embedded_credentials', 'unsupported_scheme'].includes(state.code)) setState({ phase: 'idle' })
+                }}
+                spellCheck={false}
+                autoComplete="off"
+              />
+            </div>
+            <button
+              type="submit"
+              className="btn btn-primary check-submit"
+              disabled={state.phase === 'assessing' || state.phase === 'preparing'}
+            >
+              {state.phase === 'assessing' ? (
+                <span className="btn-loading">
+                  <span className="spinner" />
+                  Assessing…
+                </span>
+              ) : state.phase === 'preparing' ? (
+                'Preparing…'
+              ) : (
+                <span className="btn-label">
+                  Check origin <ArrowRight size={14} />
+                </span>
+              )}
+            </button>
+          </form>
+          <ScanPreview input={input} />
+          {(state.phase === 'assessing' || state.phase === 'preparing') && (
+            <div className="scan-progress" role="status">
+              <span>Checking public signals. This may take up to 35 seconds.</span>
+              <button type="button" className="btn btn-ghost" onClick={cancelCheck}>Cancel check</button>
+            </div>
+          )}
+          {state.phase === 'idle' && state.cancelled && <p role="status">Check cancelled. No result was added here.</p>}
+
+          {state.phase === 'error' && (
+            <motion.div
+              className="banner banner-error"
+              role="alert"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <AlertTriangle size={14} />
+              <span>{state.message}</span>
+              {!['invalid_url', 'private_address', 'embedded_credentials', 'unsupported_scheme'].includes(state.code) &&
+                <button type="button" className="btn btn-ghost" onClick={() => { void refreshHealth(); void runCheck(input) }}>Retry check</button>}
+            </motion.div>
+          )}
+
+          {/* Health indicator */}
+          <div className="health-indicator">
+            <span className={health?.status === 'ok' && health.rdap === 'ok' ? 'health-ok' : 'health-offline'} role="status">
+              {health?.status === 'ok' && health.rdap === 'ok' ? <CheckCircle size={12} /> : <AlertTriangle size={12} />}
+              {healthLabel(health, healthChecking)}
+              {!healthChecking && !health && <span className="health-detail"> — run <code>./scripts/dev.sh</code></span>}
+            </span>
+            <button type="button" className="btn btn-ghost" onClick={() => void refreshHealth()} disabled={healthChecking}>Refresh service status</button>
+          </div>
+          <p className="scope-note">No login, no exploit, no private-network scan. Confirm requests for money or codes through a channel you already trust.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Result area ── */}
+      <AnimatePresence mode="wait">
+        {state.phase === 'done' && (
+          <motion.div
+            key="result"
+            ref={resultRef}
+            initial={reduced ? false : { opacity: 0, y: 8 }}
+            transition={{ duration: reduced ? 0 : 0.22 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="result-section"
+          >
+            <Report assessment={state.assessment} discarded={state.discarded} />
+            <div className="result-actions">
+              <button className="btn btn-ghost" onClick={() => { setState({ phase: 'idle' }); setInput(''); inputRef.current?.focus(); inputRef.current?.scrollIntoView({ block: 'center', behavior: reduced ? 'instant' : 'smooth' }) }}>
+                Check another origin
+              </button>
+              <button className="btn btn-ghost" onClick={() => navigate('/history')}>
+                View history
+              </button>
+              <button className="btn btn-ghost" onClick={() => navigate('/compare')}>
+                Compare origins
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <section className="features-section" aria-labelledby="evidence-title">
+      <div className="home-section-header"><p className="eyebrow">02 / The evidence behind the number</p><h2 id="evidence-title">Less guesswork. More context.</h2><p>Every assessment records the signals checked, the warnings found, and the limits of the result.</p></div>
+      <div className="features-grid">
+        <FeatureCard
+          icon={<Shield size={22} />}
+          title="Origin-only contract"
+          body="Only scheme and host leave this page. Path, query, fragment, cookies, and credentials are stripped before anything is sent."
+        />
+        <FeatureCard
+          icon={<Layers size={22} />}
+          title="Three-process architecture"
+          body="React explains the result, Go checks the assessed host, and Java looks up public registration records. Each has a separate responsibility."
+        />
+        <FeatureCard
+          icon={<Server size={22} />}
+          title="Private by default"
+          body="Loopback, RFC1918, link-local, cloud-metadata addresses are refused. The checker cannot be turned into a network scanner."
+        />
+        <FeatureCard
+          icon={<Activity size={22} />}
+          title="Advisory, not a verdict"
+          body="Score is an advisory index of public signals. Not a detection rate. Confirm anything that asks for money on a channel you already trust."
+        />
+      </div>
+      </section>
+
+      {/* ── How it works ── */}
+      <section className="how-section">
+        <p className="eyebrow">03 / Your next step</p>
+        <h2 className="section-title">From a link to an informed decision.</h2>
+        <div className="steps-row">
+          <Step number={1} title="Paste a link" body="Paste an HTTP or HTTPS link. Path, query and fragment are discarded locally; embedded credentials are refused." />
+          <Step number={2} title="We check public signals" body="Certificate, RDAP registration, DNS records, redirect chain. No login, no exploit, no script." />
+          <Step number={3} title="Read your case file" body="Advisory score, documented rules, extra observations, and actionable steps — all in one place." />
+        </div>
+      </section>
+
+      <aside className="trust-section"><p>Understand the number before relying on it.</p><div className="desk-links"><Link to="/signals">Read the signal weights <ArrowRight size={15} aria-hidden="true" /></Link><Link to="/limits">What a check cannot tell you</Link></div></aside>
     </div>
   )
 }
 
-function Refusal({ failure }: { failure: { code: string; message: string } }) {
-  const known = refusals[failure.code]
+/* ── Feature card ── */
+
+function FeatureCard({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
+  const reduced = useReducedMotion()
   return (
-    <motion.section className="refusal" id="result" role="alert" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-      <p className="kicker">Not contacted</p>
-      <h2 id="verdict-title" tabIndex={-1}>{known ? known.title : 'This link could not be checked.'}</h2>
-      <p>{known ? known.body : failure.message}</p>
+    <motion.article
+      className="feature-card glass-panel"
+      initial={reduced ? false : { opacity: 0, y: 8 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: reduced ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
+    >
+      <div className="feature-icon">{icon}</div>
+      <h3 className="feature-title">{title}</h3>
+      <p className="feature-body">{body}</p>
+    </motion.article>
+  )
+}
+
+/* ── How-it-works step ── */
+
+function Step({ number, title, body }: { number: number; title: string; body: string }) {
+  const reduced = useReducedMotion()
+  return (
+    <motion.div
+      className="step-card"
+      initial={reduced ? false : { opacity: 0, y: 8 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: reduced ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
+    >
+      <span className="step-number">{number}</span>
+      <h3 className="step-title">{title}</h3>
+      <p className="step-body">{body}</p>
+    </motion.div>
+  )
+}
+
+/* ── 404 page ── */
+
+function NotFound() {
+  return (
+    <motion.section className="not-found" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+      <div className="not-found-content">
+        <Globe size={48} className="not-found-icon" />
+        <h1>No such page</h1>
+        <p>This page does not exist. Return to the checker to assess a public origin.</p>
+        <Link to="/" className="btn btn-primary">Go to checker</Link>
+      </div>
     </motion.section>
-  )
-}
-
-function Status({ health }: { health: Health | null | undefined }) {
-  const state = health === undefined ? 'wait' : health === null ? 'down' : health.rdap === 'ok' ? 'ok' : 'warn'
-  const label =
-    state === 'wait'
-      ? 'Services…'
-      : state === 'down'
-        ? 'Checker offline'
-        : state === 'ok'
-          ? 'Checker ready'
-          : 'Registry offline'
-  return (
-    <p className={`status-indicator ${state}`}>
-      <span className="status-dot" aria-hidden="true" /> {label}
-    </p>
   )
 }
